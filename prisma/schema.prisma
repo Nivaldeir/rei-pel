@@ -1,0 +1,44 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id             String   @id @unique @default(uuid())
+  type           String
+  city           String
+  code           String
+  representative String
+  email          String   @unique
+  password       String
+  isAdmin        Boolean? @default(false)
+  clients        Client[]
+}
+
+model Client {
+  id                String  @id @unique @default(uuid())
+  code              String
+  identification    String
+  name              String
+  stateRegistration String
+  razaoSocial       String
+  classification    String
+  tell              String
+  userId            String?
+  user              User?   @relation(fields: [userId], references: [id])
+}
+
+model Product {
+  id          String @id @unique @default(uuid())
+  code        String
+  description String
+  apres       String
+  ipi         String
+  table1      Float
+  table2      Float
+  table3      Float
+}
