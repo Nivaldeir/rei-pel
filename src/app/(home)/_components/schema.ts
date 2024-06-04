@@ -16,6 +16,7 @@ export const createOrder = z.object({
     stateRegistration: z.string(),
     classification: z.string(),
     tell: z.string(),
+    razaoSocial: z.string(),
   }),
   conveyor: z.string(),
   observation: z.string(),

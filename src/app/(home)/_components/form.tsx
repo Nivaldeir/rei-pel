@@ -29,6 +29,7 @@ import { toast } from "@/components/ui/use-toast";
 
 const data: Client[] = [
   {
+     razaoSocial:"123",
     classification: "123",
     code: "123",
     id: "12",
