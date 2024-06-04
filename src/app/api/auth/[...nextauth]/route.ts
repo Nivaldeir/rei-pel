@@ -1,4 +1,3 @@
-import { Password } from "@/services/bycript";
 import { db } from "@/services/database";
 import NextAuth, { NextAuthOptions } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
