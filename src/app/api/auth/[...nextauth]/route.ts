@@ -1,6 +1,6 @@
 import { db } from "@/services/database";
 import { NextAuthOptions } from "next-auth";
-import NextAuth from "next-auth/next";
+import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 
 export const authNextOptions: NextAuthOptions = {
@@ -30,7 +30,9 @@ export const authNextOptions: NextAuthOptions = {
   },
   callbacks: {
     async jwt({ token, user }) {
-      user && (token.user = user);
+      if (user) {
+        token.user = user;
+      }
       return token;
     },
     async session({ session, token }) {
@@ -39,5 +41,6 @@ export const authNextOptions: NextAuthOptions = {
     },
   },
 };
+
 const handler = NextAuth(authNextOptions);
 export { handler as GET, handler as POST };
