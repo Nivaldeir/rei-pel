@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export function middleware(request: NextRequest) {
-  const token = request.cookies.get("next-auth.session-token");
+  const token = request.cookies.get("__Secure-next-auth.session-token") ?? request.cookies.get("next-auth.session-token");
   const pathname = request.nextUrl.pathname;
   if (pathname === "/sign-in" && token) {
     return NextResponse.rewrite(new URL("/", request.url));
