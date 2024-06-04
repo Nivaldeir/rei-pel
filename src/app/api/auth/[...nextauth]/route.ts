@@ -3,7 +3,7 @@ import { NextAuthOptions } from "next-auth";
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 
-export const authNextOptions: NextAuthOptions = {
+const authNextOptions: NextAuthOptions = {
   providers: [
     Credentials({
       credentials: {},
@@ -24,9 +24,8 @@ export const authNextOptions: NextAuthOptions = {
   ],
   pages: {
     signIn: "/sign-in",
-    error: "/auth",
-    verifyRequest: "/auth",
-    newUser: "/app",
+    error: "/",
+    verifyRequest: "/sign-in",
   },
   callbacks: {
     async jwt({ token, user }) {
