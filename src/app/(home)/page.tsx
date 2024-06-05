@@ -1,7 +1,7 @@
 import { db } from "@/services/database";
 import { FormHome } from "./_components/form";
 import { getServerSession } from "next-auth";
-import { authNextOptions } from "../api/auth/[...nextauth]/route";
+import { authNextOptions } from "../api/auth/[...nextauth]/authNextOptions";
 
 export default async function Home() {
   const session = await getServerSession(authNextOptions);
