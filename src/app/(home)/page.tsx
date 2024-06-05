@@ -10,3 +10,4 @@ export default async function Home() {
   ]);
   return <FormHome products={products} clients={clients} />;
 }
+
