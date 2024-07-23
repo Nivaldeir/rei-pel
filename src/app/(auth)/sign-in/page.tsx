@@ -1,45 +1,40 @@
-"use client";
-import { Button } from "@/components/ui/button";
+'use client'
+import { Button } from '@/components/ui/button'
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
-  FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { LoginUser } from "@/lib/types";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { TextField } from "@mui/material";
-import Image from "next/image";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { signIn } from "next-auth/react";
-type Props = {};
+} from '@/components/ui/form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import Image from 'next/image'
+import { useForm } from 'react-hook-form'
+import { z } from 'zod'
+import { signIn } from 'next-auth/react'
+import { LoginUser } from '@/lib/schema/user-sign'
+import { Input } from '@/components/ui/input'
 
-const Page = ({}: Props) => {
+const Page = () => {
   const form = useForm<z.infer<typeof LoginUser>>({
-    mode: "onChange",
+    mode: 'onChange',
     resolver: zodResolver(LoginUser),
-    defaultValues: {
-      email: "",
-      password: "",
-    },
-  });
+  })
+
   const handleSubmit = async (values: z.infer<typeof LoginUser>) => {
-    const res = await signIn("credentials", {
+    await signIn('credentials', {
       redirect: true,
-      callbackUrl: "/",
+      callbackUrl: '/',
       email: values.email,
       password: values.password,
-    });
-    console.log(res);
-  };
+    })
+  }
+
   return (
-    <div>
-      <Image src={"/home.png"} fill alt="background page home" />
+    <div className="relative w-full h-full">
+      <Image src={'/home.png'} fill alt="background page home" />
       <div className="z-20 absolute h-full w-full backdrop-blur-md flex justify-center items-center">
-        <div className=" bg-slate-300 flex flex-col items-center p-5 rounded-lg">
+        <div className="bg-slate-300 flex flex-col items-center p-5 rounded-lg">
           <Form {...form}>
             <form
               className="w-full flex flex-col gap-4 items-center"
@@ -52,10 +47,10 @@ const Page = ({}: Props) => {
                 render={({ field }) => (
                   <FormItem className="flex-grow-[1]">
                     <FormControl>
-                      <TextField
-                        label="Email"
+                      <Input
                         className="bg-white rounded-sm w-[350px]"
                         id="outlined-basic"
+                        placeholder="Email"
                         onChange={field.onChange}
                         value={field.value}
                       />
@@ -70,12 +65,11 @@ const Page = ({}: Props) => {
                 render={({ field }) => (
                   <FormItem className="flex-grow-[1]">
                     <FormControl>
-                      <TextField
-                        label="Senha"
+                      <Input
                         type="password"
+                        placeholder="Senha"
                         className="bg-white rounded-sm w-[350px]"
                         autoComplete="false"
-                        id="outlined-basic"
                         onChange={field.onChange}
                         value={field.value}
                       />
@@ -92,7 +86,7 @@ const Page = ({}: Props) => {
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default Page;
+export default Page

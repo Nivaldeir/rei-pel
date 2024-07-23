@@ -1,53 +1,72 @@
-"use server"
-import { Client, User } from "@prisma/client";
-import puppeteer from "puppeteer"
-import { ProductWithQuantity } from "../../../types/global";
-import { CalculateDiscount } from "@/lib/calculate-discount";
-import { randomUUID } from "crypto";
-import { readFileSync } from "fs"
-import { constructNow } from "date-fns";
+'use server'
+import { randomUUID } from 'crypto'
+import { readFileSync, unlinkSync } from 'fs'
+import { ProductWithDetails } from '@/components/form/form-create-sale'
+import { htmlOrder } from '@/lib/html'
+import { CalculateDiscount } from '@/lib/utils'
+import { Client } from '@prisma/client'
+import puppeteer from 'puppeteer'
 
 type Props = {
-  products: ProductWithQuantity[];
-  client: Omit<Client, "userId">;
-  user?: User;
-  number?: string;
-  date: Date;
-  observation: string;
-  planSell: string;
-  transport: string
-};
+  products: ProductWithDetails[]
+  client?: Omit<Client, 'userId'> | any
+  user?: any
+  number?: string
+  date?: Date
+  observation?: string
+  planSell?: string
+  transport?: string
+  path?: string
+}
 
 export async function generatePdf(props: Props) {
-  const { client, date, products, user = {}, number, observation, planSell, transport } = props
-  const browser = await puppeteer.launch();
-  const page = await browser.newPage();
-  let tableHtml = "";
+  const {
+    client,
+    date,
+    products,
+    number,
+    observation,
+    planSell,
+    transport,
+    path,
+  } = props
+  const browser = await puppeteer.launch({
+    headless: true,
+    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    timeout: 120000,
+  })
+  const page = await browser.newPage()
+  let tableHtml = ' '
   products.forEach((p: any) => {
     tableHtml += `
   <tr>
-      <td>${p.product.code}</td>    
-      <td>${p.product.description}</td>    
-      <td>${p.product.apres}</td>    
-      <td>${p.product[p.table].toLocaleString("pt-BR", {
-      minimumFractionDigits: 2,
-      style: "currency",
-      currency: "BRL",
-    })}</td>    
-      <td>${p.discount}%</td>    
-      <td>${p.quantity}</td>    
-      <td>${CalculateDiscount({
-      discount: p.discount,
-      price: p.product[p.table],
-      quantity: p.quantity
-    }).toLocaleString("pt-BR", {
-      minimumFractionDigits: 2,
-      style: "currency",
-      currency: "BRL",
-    })}</td>    
-  `;
-    tableHtml += `</tr>`;
-  });
+      <td>${p.code ?? ' '}</td>    
+      <td>${p.description ?? ' '}</td>    
+      <td>${p.apres ?? ' '}</td>    
+      <td>${
+        p[p.table].toLocaleString('pt-BR', {
+          minimumFractionDigits: 2,
+          style: 'currency',
+          currency: 'BRL',
+        }) ?? ' '
+      }</td>    
+      <td>${p.discount ?? ' '}%</td>    
+      <td>${p.quantity ?? ' '}</td>    
+      <td>${
+        CalculateDiscount({
+          discount: p.discount,
+          price: p[p.table],
+          quantity: p.quantity,
+        }).toLocaleString('pt-BR', {
+          minimumFractionDigits: 2,
+          style: 'currency',
+          currency: 'BRL',
+        }) ?? ' '
+      }</td>    
+  `
+    tableHtml += `</tr>`
+  })
+
   const htmlContent = `
   <!DOCTYPE html>
 <html lang="en">
@@ -118,11 +137,11 @@ export async function generatePdf(props: Props) {
         <div class="flex" style="gap: 1rem;width:100%; flex-wrap:wrap">
           <div class="flex">
             <p>Numero: </p>
-            <p>Numero</p>
+            <p>${number}</p>
           </div>
           <div class="flex">
           <p>Data: </p>
-          <p>${date.toLocaleDateString("pt-BR", { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'America/Sao_Paulo' })}</p>
+          <p>${date?.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'America/Sao_Paulo' })}</p>
         </div>
         <div class="flex">
           <p>Transportadora:</p>
@@ -143,52 +162,24 @@ export async function generatePdf(props: Props) {
         <div class="flex" style="gap: 2rem;">
         <div class="flex">
         <p>CNPJ ou CPF:</p>
-        <p>${client.identification}</p>
+        <p>${client?.identification}</p>
       </div>
       <div class="flex">
         <p>Codigo:</p>
-        <p>${client.code}</p>
+        <p>${client?.code}</p>
       </div>
       <div class="flex">
         <p>Raza Social:</p>
-        <p>${client.name}</p>
+        <p>${client?.name}</p>
       </div>
       <div class="flex">
         <p>Cidade:</p>
-        <p>${client.stateRegistration}</p>
+        <p>${client?.city}</p>
       </div>
       <div class="flex">
         <p>Telefone:</p>
-        <p>${client.tell}</p>
+        <p>${client?.tell}</p>
       </div>
-        </div>
-      </aside>
-    </section>
-    <section>
-      <aside style="position: relative; margin-top: 2rem;" class="border">
-        <h3 style="position: absolute; top: -32px; background-color: white; padding: 0 10px 0 10px;">Informações do
-          cliente</h3>
-        <div class="flex" style="gap: 2rem;">
-          <div class="flex">
-            <p>CNPJ ou CPF:</p>
-            <p>${client.identification}</p>
-          </div>
-          <div class="flex">
-            <p>Codigo:</p>
-            <p>${client.code}</p>
-          </div>
-          <div class="flex">
-            <p>Raza Social:</p>
-            <p>${client.name}</p>
-          </div>
-          <div class="flex">
-            <p>Cidade:</p>
-            <p>${client.stateRegistration}</p>
-          </div>
-          <div class="flex">
-            <p>Telefone:</p>
-            <p>${client.tell}</p>
-          </div>
         </div>
       </aside>
     </section>
@@ -215,32 +206,39 @@ export async function generatePdf(props: Props) {
     </section>
   </main>
 </body>
-</html>`;
-
-  await page.setContent(htmlContent);
-  const formattedDate = date.toISOString().replace(/:/g, '');
-  const pdfPath = `files/${formattedDate}_${randomUUID()}.pdf`; // Nome do arquivo PDF com um UUID único
-
-
-  await page.pdf({ path: pdfPath, format: 'A4' });
-  await browser.close();
+</html>`
+  await page.setContent(path ? htmlOrder(products) : htmlContent, {
+    waitUntil: 'networkidle0',
+  })
+  const formattedDate = date?.toISOString().replace(/:/g, ' ')
+  const pdfPath = process.cwd() + `/files/${formattedDate}_${randomUUID()}.pdf`
+  page.setDefaultTimeout(120000)
+  await page.pdf({ path: path ?? pdfPath, format: 'A4', waitForFonts: true })
+  console.log(pdfPath)
+  await browser.close()
   return pdfPath
 }
 
 export async function sendFilePdf(pathFile: string) {
-  const fileContent = readFileSync(pathFile);
-  const blob = new Blob([fileContent], { type: "application/pdf" });
-  const formData = new FormData();
-  formData.append("file", blob, "arquivo.pdf");
+  try {
+    const fileContent = readFileSync(pathFile)
+    const blob = new Blob([fileContent], { type: 'application/pdf' })
+    const formData = new FormData()
+    formData.append('file', blob, 'arquivo.pdf')
 
-  const response = await fetch("https://app-api.holmesdoc.io/v1/documents", {
-    method: "POST",
-    headers: {
-      api_token: process.env.api_token!,
-    },
-    body: formData,
-  });
+    const response = await fetch('https://app-api.holmesdoc.io/v1/documents', {
+      signal: AbortSignal.timeout(5000),
+      method: 'POST',
+      headers: {
+        api_token: process.env.api_token!,
+      },
+      body: formData,
+    })
+    console.log(response)
+    const { id } = await response.json()
 
-  const { id } = await response.json();
-  return id;
+    return id
+  } catch (error: any) {
+    throw new Error(error)
+  }
 }
