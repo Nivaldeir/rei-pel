@@ -97,6 +97,9 @@ export function column({ onDelete }: props): ColumnDef<Products>[] {
       accessorKey: 'total',
       header: () => <div className="text-center">Total</div>,
       cell: ({ row }) => {
+        console.log({   discount: row.original.discount,
+          quantity: row.original.quantity,
+          price: row.original,})
         const totalWithDiscount = CalculateDiscount({
           discount: row.original.discount,
           quantity: row.original.quantity,

@@ -1,22 +1,24 @@
 'use server'
 import { randomUUID } from 'crypto'
-import { readFileSync, unlinkSync } from 'fs'
 import { ProductWithDetails } from '@/components/form/form-create-sale'
 import { htmlOrder } from '@/lib/html'
 import { CalculateDiscount } from '@/lib/utils'
+import fetch from 'node-fetch';
+import FormData from 'form-data';
 import { Client } from '@prisma/client'
 import puppeteer from 'puppeteer'
-
+import { Readable } from 'stream';
+import { uploadPDFFromLocal } from '@/lib/firebase'
 type Props = {
   products: ProductWithDetails[]
-  client?: Omit<Client, 'userId'> | any
+  client?: Omit<Client, 'userId'>
   user?: any
   number?: string
   date?: Date
   observation?: string
   planSell?: string
   transport?: string
-  path?: string
+  view?: boolean
 }
 
 export async function generatePdf(props: Props) {
@@ -28,7 +30,7 @@ export async function generatePdf(props: Props) {
     observation,
     planSell,
     transport,
-    path,
+    view = false,
   } = props
   const browser = await puppeteer.launch({
     headless: true,
@@ -40,29 +42,27 @@ export async function generatePdf(props: Props) {
   products.forEach((p: any) => {
     tableHtml += `
   <tr>
-      <td>${p.code ?? ' '}</td>    
-      <td>${p.description ?? ' '}</td>    
-      <td>${p.apres ?? ' '}</td>    
-      <td>${
-        p[p.table].toLocaleString('pt-BR', {
-          minimumFractionDigits: 2,
-          style: 'currency',
-          currency: 'BRL',
-        }) ?? ' '
-      }</td>    
-      <td>${p.discount ?? ' '}%</td>    
-      <td>${p.quantity ?? ' '}</td>    
-      <td>${
-        CalculateDiscount({
-          discount: p.discount,
-          price: p[p.table],
-          quantity: p.quantity,
-        }).toLocaleString('pt-BR', {
-          minimumFractionDigits: 2,
-          style: 'currency',
-          currency: 'BRL',
-        }) ?? ' '
-      }</td>    
+      <td>${p.code ?? ' '}</td>
+      <td>${p.description ?? ' '}</td>
+      <td>${p.apres ?? ' '}</td>
+      <td>${p[p.table].toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+      style: 'currency',
+      currency: 'BRL',
+    }) ?? ' '
+      }</td>
+      <td>${p.discount ?? ' '}%</td>
+      <td>${p.quantity ?? ' '}</td>
+      <td>${CalculateDiscount({
+        discount: p.discount,
+        price: p[p.table],
+        quantity: p.quantity,
+      }).toLocaleString('pt-BR', {
+        minimumFractionDigits: 2,
+        style: 'currency',
+        currency: 'BRL',
+      }) ?? ' '
+      }</td>
   `
     tableHtml += `</tr>`
   })
@@ -207,38 +207,61 @@ export async function generatePdf(props: Props) {
   </main>
 </body>
 </html>`
-  await page.setContent(path ? htmlOrder(products) : htmlContent, {
+  await page.setContent(htmlContent, {
     waitUntil: 'networkidle0',
   })
-  const formattedDate = date?.toISOString().replace(/:/g, ' ')
-  const pdfPath = process.cwd() + `/files/${formattedDate}_${randomUUID()}.pdf`
+  const pdfPath = process.cwd() + `/files/${client!.code}.pdf`
   page.setDefaultTimeout(120000)
-  await page.pdf({ path: path ?? pdfPath, format: 'A4', waitForFonts: true })
-  console.log(pdfPath)
+  await page.pdf({ path: pdfPath, format: 'A4', waitForFonts: true })
   await browser.close()
-  return pdfPath
+  const downloadURL = await uploadPDFFromLocal(pdfPath)
+  if (view)
+    return downloadURL
+  return sendAndGenerate(downloadURL)
 }
 
-export async function sendFilePdf(pathFile: string) {
+export async function sendAndGenerate(urlPath: string) {
+
+  const fileContent = await downloadPDF(urlPath);
+  const documentId = await sendFilePdf(fileContent);
+  return documentId
+}
+
+async function sendFilePdf(fileContent: ArrayBuffer): Promise<string> {
   try {
-    const fileContent = readFileSync(pathFile)
-    const blob = new Blob([fileContent], { type: 'application/pdf' })
-    const formData = new FormData()
-    formData.append('file', blob, 'arquivo.pdf')
+    const buffer = Buffer.from(fileContent);
+    const formData = new FormData();
+    formData.append('file', Readable.from(buffer), 'arquivo.pdf');
+
+    const headers = formData.getHeaders();
+    headers['api_token'] = process.env.api_token!;
 
     const response = await fetch('https://app-api.holmesdoc.io/v1/documents', {
       signal: AbortSignal.timeout(5000),
       method: 'POST',
-      headers: {
-        api_token: process.env.api_token!,
-      },
+      headers,
       body: formData,
-    })
-    console.log(response)
-    const { id } = await response.json()
+    });
 
-    return id
+    if (!response.ok) {
+      throw new Error(`Failed to send PDF: ${response.statusText}`);
+    }
+
+    const responseData = await response.json();
+    const { id } = responseData;
+    return id;
   } catch (error: any) {
-    throw new Error(error)
+    throw new Error(`Error sending PDF: ${error.message}`);
+  }
+}
+async function downloadPDF(pdfUrl: string): Promise<ArrayBuffer> {
+  try {
+    const response = await fetch(pdfUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch PDF: ${response.statusText}`);
+    }
+    return await response.arrayBuffer();
+  } catch (error: any) {
+    throw new Error(`Error downloading PDF: ${error.message}`);
   }
 }

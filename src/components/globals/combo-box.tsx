@@ -38,14 +38,14 @@ export function Combobox({ data, propsKey, fnAdd }: Props) {
         >
           {value
             ? data?.find((framework) => framework[propsKey] === value)?.[
-                propsKey
-              ]
+            propsKey
+            ]
             : 'Selecione...'}
           <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="p-0">
-        <Command>
+      <PopoverContent className="p-0  w-full">
+        <Command >
           <CommandInput placeholder="Selecione..." className="h-9 w-full" />
           <CommandList>
             <CommandEmpty>Não encontrado.</CommandEmpty>

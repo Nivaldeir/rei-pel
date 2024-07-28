@@ -3,6 +3,8 @@ import { db } from '@/lib/db'
 import { NextAuthOptions } from 'next-auth'
 
 import Credentials from 'next-auth/providers/credentials'
+import { User } from '../../types/next-auth'
+import { createHash } from 'crypto'
 
 export const authNextOptions: NextAuthOptions = {
   providers: [
@@ -16,8 +18,13 @@ export const authNextOptions: NextAuthOptions = {
           },
         })
         if (!user) throw new Error('Usuario não cadastrado')
-        const isCompare = user.password === password
-        if (!isCompare) throw new Error('Senha incorreta')
+        const hashPassowrd = createHash('sha256')
+          .update(password)
+          .digest('hex')
+        console.log(createHash('sha256')
+          .update("123")
+          .digest('hex'))
+        if (user.password !== hashPassowrd) throw new Error("Senha ou usuario incorreto")
         return {
           id: user.id,
           type: user.type,
@@ -27,6 +34,7 @@ export const authNextOptions: NextAuthOptions = {
           email: user.email,
           isAdmin: user.isAdmin,
         }
+
       },
     }),
   ],
@@ -43,15 +51,7 @@ export const authNextOptions: NextAuthOptions = {
       return token
     },
     async session({ session, token }) {
-      session.user = token as {
-        id: string
-        type: string
-        city: string
-        code: string
-        representative: string
-        email: string
-        isAdmin: string
-      }
+      session.user = token as User
       return session
     },
   },

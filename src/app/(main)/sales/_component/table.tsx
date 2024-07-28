@@ -13,7 +13,7 @@ import {
 import { useState } from 'react'
 import { columns } from './column'
 import { DataTable } from '@/components/globals/data-table'
-import { Prisma } from '@prisma/client'
+import { Prisma, Product } from '@prisma/client'
 
 type Props = {
   data: Prisma.ProductSaleGetPayload<{
@@ -23,7 +23,7 @@ type Props = {
     }
   }>[]
 }
-export default function Table({ data }: Props) {
+export default function Table({ data}: Props) {
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})

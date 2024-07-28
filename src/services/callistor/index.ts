@@ -1,3 +1,4 @@
+//@ts-nocheck
 import { Client } from '@prisma/client'
 import axios from 'axios'
 const username = 'ti'
@@ -7,7 +8,7 @@ const ibgm = require('./IBGM.json')
 export type Callisto = {
   plano: string
   date: Date
-  client: Client
+  client: Omit<Client, "userId">
   vendedor: string
   transportadora: string
   tabelaPreco: '1' | '2' | '3'
@@ -34,7 +35,7 @@ export async function createOrderCallisto(props: Callisto) {
           gerarPedido: 'S',
           plano: props.plano,
           cliente: {
-            classificacao: client?.classification[0].toUpperCase() ?? '',
+            classificacao: client?.classification[0].toUpperCase() || '',
             cpfCnpj: client.identification ?? '',
             nome: client?.name ?? '',
             razaoSocial: client.razaoSocial ?? '',
@@ -85,7 +86,6 @@ export async function createOrderCallisto(props: Callisto) {
       },
     },
   )
-  console.log(response)
   const { object } = response.data[0]
   return object as {
     codigoPedidoEcommerce: number

@@ -1,7 +1,6 @@
 'use server'
 import ClienForm, { Client } from '@/components/form/form-client-create'
 import { getServerSession } from 'next-auth/next'
-import { column } from './_components/column'
 import { authNextOptions } from '@/config/auth-config'
 import { db } from '@/lib/db'
 import Table from './_components/table'

@@ -20,8 +20,7 @@ model User {
 }
 
 model Client {
-  id                String        @id @unique @default(uuid())
-  code              String        @default(cuid())
+  code              String        @id @unique @default(cuid())
   identification    String?
   name              String?
   stateRegistration String?
@@ -37,14 +36,15 @@ model Client {
 }
 
 model Product {
-  id          String @id @unique @default(uuid())
-  code        String
-  description String
-  apres       String
-  ipi         String
-  table1      Float
-  table2      Float
-  table3      Float
+  id              String            @id @unique @default(uuid())
+  code            String
+  description     String
+  apres           String
+  ipi             String
+  table1          Float
+  table2          Float
+  table3          Float
+  ProductQuantity ProductQuantity[]
 }
 
 model ProductQuantity {
@@ -54,22 +54,25 @@ model ProductQuantity {
   price         Float
   quantity      Int
   discount      Float
+  product       Product      @relation(fields: [productId], references: [id])
   ProductSale   ProductSale? @relation(fields: [productSaleId], references: [id])
   productSaleId String?
+  productId     String
 }
 
 model ProductSale {
   id                  String            @id @unique @default(uuid())
-  codePedidoEcommerce String
-  codePedido          String
-  numeroPedido        String
+  codePedidoEcommerce String?
+  codePedido          String?
+  numeroPedido        String?
   createAt            DateTime          @default(now())
   product             ProductQuantity[]
-  obs                 String
+  obs                 String?
   transport           String
   planSale            String
   clientId            String
   userId              String
+  status              String            @default("AWAIT")
   user                User              @relation(fields: [userId], references: [id])
-  client              Client            @relation(fields: [clientId], references: [id])
+  client              Client            @relation(fields: [clientId], references: [code])
 }

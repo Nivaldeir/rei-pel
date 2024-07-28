@@ -14,20 +14,31 @@ import { z } from 'zod'
 import { signIn } from 'next-auth/react'
 import { LoginUser } from '@/lib/schema/user-sign'
 import { Input } from '@/components/ui/input'
+import { toast } from '@/components/ui/use-toast'
+import { useRouter } from 'next/navigation'
+import { createHash } from 'crypto'
 
 const Page = () => {
+  const router = useRouter()
   const form = useForm<z.infer<typeof LoginUser>>({
     mode: 'onChange',
     resolver: zodResolver(LoginUser),
   })
 
   const handleSubmit = async (values: z.infer<typeof LoginUser>) => {
-    await signIn('credentials', {
-      redirect: true,
+    const response = await signIn('credentials', {
+      redirect: false,
       callbackUrl: '/',
       email: values.email,
       password: values.password,
     })
+    if (response?.error) {
+      toast({
+        description: response.error,
+      });
+    } else {
+      router.push('/');
+    }
   }
 
   return (

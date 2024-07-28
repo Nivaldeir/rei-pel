@@ -13,16 +13,17 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <SessionProvider>
-        <ModalProvider>
-          <body
-            className={`${inter.className} flex h-screen w-screen relative`}
-          >
-            {children}
-            <Toaster />
-          </body>
+
+      <body
+        className={`${inter.className} flex h-screen w-screen relative`}
+      >
+        <SessionProvider>
+          <ModalProvider>
+          {children}
+          <Toaster />
         </ModalProvider>
       </SessionProvider>
-    </html>
+    </body>
+    </html >
   )
 }

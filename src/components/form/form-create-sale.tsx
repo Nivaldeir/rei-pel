@@ -6,14 +6,12 @@ import { z } from 'zod'
 import { AddingProduct } from '@/app/(main)/(home)/_components/adding-product'
 import { Products, column } from '@/app/(main)/(home)/_components/column'
 import Table from '@/app/(main)/(home)/_components/table'
-import { authNextOptions } from '@/config/auth-config'
 import { createSale } from '@/lib/schema/sale'
 import { generatePdf } from '@/services/pdf'
 import { sendProcess } from '@/services/process'
-import { Client, Product } from '@prisma/client'
-import { useSession } from 'next-auth/react'
+import { Client, Prisma, Product } from '@prisma/client'
 import Link from 'next/link'
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Combobox } from '../globals/combo-box'
 import { Spinner } from '../globals/spinner'
 import { Button } from '../ui/button'
@@ -30,10 +28,22 @@ import {
 import { Input } from '../ui/input'
 import { Textarea } from '../ui/textarea'
 import { toast } from '../ui/use-toast'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 type Props = {
   clients: Client[]
   dbProducts: Product[]
+  fnSave: (data: any, id?: string | null) => Promise<any>
+  fnGetById: (id: string) => any | Promise<Prisma.ProductSaleGetPayload<{
+    include: {
+      client: true,
+      product: {
+        include: {
+          product: true
+        }
+      }
+    }
+  }>>
 }
 
 export interface ProductWithDetails {
@@ -50,99 +60,104 @@ export interface ProductWithDetails {
   table: string
 }
 
-export default function FormCreateSale({ clients, dbProducts }: Props) {
-  const { data } = useSession(authNextOptions) as any
-  const [link, setLinkDownloadPDF] = useState<string | null>(null)
+export default function FormCreateSale({ clients, dbProducts, fnSave, fnGetById }: Props) {
   const [products, setProducts] = useState<ProductWithDetails[]>([])
   const [loading, setLoading] = useState(false)
+  const [linkGenerate, setLinkGenerate] = useState<string | null>(null)
+  const id = useSearchParams().get("id")
+  const router = useRouter()
+
+  useEffect(() => {
+    if (id) {
+      (async () => {
+        const result = await fnGetById(id)
+        handleClientChange(result.client)
+        setProducts(result.product.map(p => ({
+          apres: p.product.apres,
+          code: p.product.code,
+          description: p.product.description,
+          discount: p.discount,
+          ipi: p.product.ipi,
+          quantity: p.quantity,
+          id: p.product.id,
+          table: form.getValues("table"),
+          table1: p.product.table1,
+          table2: p.product.table2,
+          table3: p.product.table3
+        }) as ProductWithDetails))
+        form.setValue("observation", result?.obs || "")
+        form.setValue("conveyor", result.transport)
+        form.setValue("planSell", result.planSale)
+      })()
+    }
+  }, [id])
 
   const form = useForm<z.infer<typeof createSale>>({
     resolver: zodResolver(createSale),
     defaultValues: {
       date: new Date(),
-      tablePrice: { table: 'table1', name: 'Tabela 01' },
-      isNewClient: false,
-      client: {
-        code: '',
-        classification: '',
-        identification: '',
-        name: '',
-        razaoSocial: '',
-        tell: '',
-        stateRegistration: '',
-        city: '',
-        state: '',
-        email: '',
-      },
-      products: [],
-      observation: '',
-      conveyor: '',
-      planSell: '',
+      table: "table1"
     },
   })
 
-  useEffect(() => {
-    form.setValue('products', products)
-  }, [products])
+  const handleDelete = (productToDelete: Products) => {
+    setProducts(prev => prev.filter(e => productToDelete.id !== e.id))
+  }
 
-  const handleDelete = useCallback(
-    (productToDelete: Products) => {
-      const currentProducts: ProductWithDetails[] =
-        form.getValues('products') || []
-      const productFilter = currentProducts.filter(
-        (p) => productToDelete.id !== p.id,
-      )
-      setProducts(productFilter)
-    },
-    [form],
-  )
-
-  const handleAdd = useCallback((newProduct: ProductWithDetails) => {
+  const addingProduct = (newProduct: ProductWithDetails) => {
     setProducts((prev) => [...prev, newProduct])
-  }, [])
-  const handleClientChange = useCallback(
-    (client: Client) => {
-      form.setValue('client.code', client.code)
-      form.setValue('client.classification', client.classification ?? '')
-      form.setValue('client.identification', client.identification ?? '')
-      form.setValue('client.name', client.name ?? '')
-      form.setValue('client.razaoSocial', client.razaoSocial ?? '')
-      form.setValue('client.tell', client.tell || '')
-      form.setValue('client.stateRegistration', client.stateRegistration ?? '')
-      form.setValue('client.city', client.city ?? '')
-      form.setValue('client.state', client.state ?? '')
-      form.setValue('client.email', client.email ?? '')
-    },
-    [form],
+  }
+  const handleClientChange = ((client: Client) => {
+    form.setValue('code', client.code ?? "")
+    form.setValue('classification', client.classification ?? '')
+    form.setValue('identification', client.identification ?? '')
+    form.setValue('name', client.name ?? '')
+    form.setValue('razaoSocial', client.razaoSocial ?? '')
+    form.setValue('tell', client.tell ?? '')
+    form.setValue('stateRegistration', client.stateRegistration ?? '')
+    form.setValue('city', client.city ?? '')
+    form.setValue('state', client.state ?? '')
+  }
   )
-  // const handleGenerateLink = async () => {
-  //   try {
-  //     const email = form.getValues('client.email')
-  //     const procuctsForm = form.getValues('products')
-  //     if (procuctsForm.length === 0 || !email || !form.getValues('planSell')) {
-  //       throw new Error(
-  //         'Necessário adicionar no mínimo 1 produto, cliente e condição de pagamento',
-  //       )
-  //     }
 
-  //     const pdfPath = `public/${data?.user.id}.pdf`
-  //     console.log('PDF Path:', pdfPath)
+  const handleSaveSketch = async () => {
+    try {
+      if (products.length === 0 && !form.getValues("email") && !form.getValues("tell")) {
+        toast({
+          title: 'Error',
+          description: 'Necessário adicionar no mínimo 1 produto',
+        })
+        return
+      }
+      setLoading(true)
+      await fnSave({ ...form.getValues(), products }, id)
+      toast({
+        description: "Salvo com sucesso"
+      })
+      setProducts([])
+      form.setValue('code', '')
+      form.setValue('classification', '')
+      form.setValue('identification', '')
+      form.setValue('name', '')
+      form.setValue('razaoSocial', '')
+      form.setValue('tell', '')
+      form.setValue('stateRegistration', '')
+      form.setValue('city', '')
+      form.setValue('state', '')
+      form.setValue('conveyor', '')
+      form.setValue('planSell', '')
+      form.setValue('observation', '')
+    } catch (error) {
+      console.log(error)
+      toast({
+        description: "Preencha todos os campos obrigatorios"
+      })
+    } finally {
+      setLoading(false)
+    }
 
-  //     await generatePdf({
-  //       products,
-  //       path: pdfPath,
-  //     })
-  //     setLinkDownloadPDF(`/${data?.user.id}.pdf`)
-  //   } catch (error) {
-  //     console.error('Error generating PDF:', error)
-  //     toast({
-  //       title: 'Error',
-  //       description: error.message,
-  //     })
-  //   }
-  // }
-
-  const handleSubmit = async (formData: z.infer<typeof createSale>) => {
+  }
+  const handleSubmit = async (data: z.infer<typeof createSale>) => {
     try {
       if (products.length === 0) {
         toast({
@@ -153,28 +168,79 @@ export default function FormCreateSale({ clients, dbProducts }: Props) {
       }
       setLoading(true)
       const { numeroPedido } = await sendProcess({
-        client: formData.client as any,
-        date: formData.date,
-        observation: formData.observation!,
-        transportant: formData.conveyor,
-        planSell: formData.planSell,
-        products: formData.products,
-        isNewClient: formData.isNewClient,
-        table: formData.tablePrice.table as 'table1' | 'table2' | 'table3',
-        total: 0,
+        client: {
+          city: data.city,
+          classification: data.classification || "",
+          code: data.classification || "",
+          email: data.email || "",
+          identification: data.identification || "",
+          name: data.name || "",
+          razaoSocial: data.razaoSocial || "",
+          state: data.state || "",
+          stateRegistration: data.stateRegistration || "",
+          tell: data.tell,
+        },
+        date: data.date,
+        observation: data.observation!,
+        transportant: data.conveyor,
+        planSell: data.planSell,
+        products: products,
+        isNewClient: data.isNewClient,
+        table: data.table as 'table1' | 'table2' | 'table3',
       })
       toast({
         title: 'Pedido #' + numeroPedido,
         duration: 10000,
         description: 'Pedido gerado com sucesso',
       })
+      router.push("/")
       setProducts([])
-      form.reset({})
+      form.setValue('code', '')
+      form.setValue('classification', '')
+      form.setValue('identification', '')
+      form.setValue('name', '')
+      form.setValue('razaoSocial', '')
+      form.setValue('tell', '')
+      form.setValue('stateRegistration', '')
+      form.setValue('city', '')
+      form.setValue('state', '')
+      form.setValue('conveyor', '')
+      form.setValue('planSell', '')
+      form.setValue('observation', '')
     } catch (error: any) {
       toast({
         title: 'Error',
         description: error.message,
         variant: 'destructive',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+  const handleGenerte = async () => {
+    try {
+      setLoading(true)
+      const url = await generatePdf({
+        products,
+        client: {
+          city: form.getValues("city"),
+          classification: form.getValues("classification") || "",
+          code: form.getValues("code"),
+          email: form.getValues("email"),
+          identification: form.getValues("identification") || "",
+          name: form.getValues("name") || "",
+          razaoSocial: form.getValues("razaoSocial") || "",
+          state: form.getValues("state") || "",
+          stateRegistration: form.getValues("stateRegistration") || "",
+          tell: form.getValues("tell"),
+        },
+        view: true
+      })
+      console.log(url)
+      setLinkGenerate(url)
+    } catch (error) {
+      toast({
+        description: "Aconteceu algum error inesperado"
       })
     } finally {
       setLoading(false)
@@ -193,7 +259,6 @@ export default function FormCreateSale({ clients, dbProducts }: Props) {
             name="date"
             render={({ field }) => (
               <FormItem className="flex flex-col">
-                <FormLabel>Data</FormLabel>
                 <FormControl>
                   <DatePicker date={field.value} onChange={field.onChange} />
                 </FormControl>
@@ -201,29 +266,17 @@ export default function FormCreateSale({ clients, dbProducts }: Props) {
               </FormItem>
             )}
           />
-          <FormField
-            control={form.control}
-            name="client"
-            render={() => (
-              <FormItem className="flex flex-col  w-full ">
-                <FormLabel>Cliente</FormLabel>
-                <FormControl className="w-full ">
-                  <Combobox
-                    data={clients}
-                    propsKey="name"
-                    key={'combobox-client'}
-                    fnAdd={(client: Client) => handleClientChange(client)}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
+          <Combobox
+            data={clients}
+            propsKey="name"
+            key={'combobox-client'}
+            fnAdd={(client: Client) => handleClientChange(client)}
           />
           <FormField
             control={form.control}
             name="isNewClient"
             render={({ field }) => (
               <FormItem className="flex flex-col  w-full ">
-                <FormLabel>Novo cliente</FormLabel>
                 <FormControl className="w-full ">
                   <div className="flex items-center space-x-2">
                     <Checkbox
@@ -235,7 +288,7 @@ export default function FormCreateSale({ clients, dbProducts }: Props) {
                       htmlFor="terms"
                       className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                     >
-                      Novo cliente?
+                      Novo cliente ?
                     </label>
                   </div>
                 </FormControl>
@@ -247,17 +300,13 @@ export default function FormCreateSale({ clients, dbProducts }: Props) {
           <span className="absolute top-[-13px] bg-white px-3">Cliente</span>
           <FormField
             control={form.control}
-            name="client.code"
+            name="code"
             disabled={loading}
             render={({ field }) => (
               <FormItem className="flex flex-col flex-grow-[1]">
+                <FormLabel className='text-[12px]'>Codigo</FormLabel>
                 <FormControl>
-                  <div className="relative">
-                    <span className="absolute left-2 text-[10px] text-zinc-500/70 -top-[.5rem] bg-white px-2">
-                      Codigo
-                    </span>
-                    <Input placeholder="Codigo" value={field.value} onChange={field.onChange} />
-                  </div>
+                  <Input placeholder="Codigo" value={field.value} onChange={field.onChange} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -266,16 +315,12 @@ export default function FormCreateSale({ clients, dbProducts }: Props) {
           <FormField
             disabled={loading}
             control={form.control}
-            name="client.classification"
+            name="classification"
             render={({ field }) => (
               <FormItem className="flex flex-col flex-grow-[1]">
+                <FormLabel className='text-[12px]'>Classificação</FormLabel>
                 <FormControl>
-                  <div className="relative">
-                    <span className="absolute left-2 text-[10px] text-zinc-500/70 -top-[.5rem] bg-white px-2">
-                      Classificação
-                    </span>
-                    <Input placeholder="Classificação" value={field.value} onChange={field.onChange} />
-                  </div>
+                  <Input placeholder="Classificação" value={field.value} onChange={field.onChange} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -284,16 +329,12 @@ export default function FormCreateSale({ clients, dbProducts }: Props) {
           <FormField
             disabled={loading}
             control={form.control}
-            name="client.identification"
+            name="identification"
             render={({ field }) => (
               <FormItem className="flex flex-col flex-grow-[1]">
+                <FormLabel className='text-[12px]'>Identificação</FormLabel>
                 <FormControl>
-                  <div className="relative">
-                    <span className="absolute left-2 text-[10px] text-zinc-500/70 -top-[.5rem] bg-white px-2">
-                      Identificação
-                    </span>
-                    <Input placeholder="Identificação" value={field.value} onChange={field.onChange} />
-                  </div>
+                  <Input placeholder="Identificação" value={field.value} onChange={field.onChange} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -301,16 +342,12 @@ export default function FormCreateSale({ clients, dbProducts }: Props) {
           />
           <FormField
             disabled={loading}
-            name="client.name"
+            name="name"
             render={({ field }) => (
               <FormItem className="flex flex-col flex-grow-[1]">
+                <FormLabel className='text-[12px]'>Nome</FormLabel>
                 <FormControl>
-                  <div className="relative">
-                    <span className="absolute left-2 text-[10px] text-zinc-500/70 -top-[.5rem] bg-white px-2">
-                      Nome
-                    </span>
-                    <Input placeholder="Nome" value={field.value} onChange={field.onChange} />
-                  </div>
+                  <Input placeholder="Nome" value={field.value} onChange={field.onChange} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -319,16 +356,12 @@ export default function FormCreateSale({ clients, dbProducts }: Props) {
           <FormField
             disabled={loading}
             control={form.control}
-            name="client.razaoSocial"
+            name="razaoSocial"
             render={({ field }) => (
               <FormItem className="flex flex-col flex-grow-[1]">
+                <FormLabel className='text-[12px]'>Razao social</FormLabel>
                 <FormControl>
-                  <div className="relative">
-                    <span className="absolute left-2 text-[10px] text-zinc-500/70 -top-[.5rem] bg-white px-2">
-                      Razao social
-                    </span>
-                    <Input placeholder="Razão social" value={field.value} onChange={field.onChange} />
-                  </div>
+                  <Input placeholder="Razão social" value={field.value} onChange={field.onChange} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -337,16 +370,12 @@ export default function FormCreateSale({ clients, dbProducts }: Props) {
           <FormField
             disabled={loading}
             control={form.control}
-            name="client.tell"
+            name="tell"
             render={({ field }) => (
               <FormItem className="flex flex-col flex-grow-[1]">
+                <FormLabel className='text-[12px]'>Telefone</FormLabel>
                 <FormControl>
-                  <div className="relative">
-                    <span className="absolute left-2 text-[10px] text-zinc-500/70 -top-[.5rem] bg-white px-2">
-                      Telefone
-                    </span>
-                    <Input placeholder="Telefone" value={field.value} onChange={field.onChange} />
-                  </div>
+                  <Input placeholder="Telefone" value={field.value} onChange={field.onChange} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -355,16 +384,12 @@ export default function FormCreateSale({ clients, dbProducts }: Props) {
           <FormField
             disabled={loading}
             control={form.control}
-            name="client.stateRegistration"
+            name="stateRegistration"
             render={({ field }) => (
               <FormItem className="flex flex-col flex-grow-[1]">
+                <FormLabel className='text-[12px]'>Registro nacional</FormLabel>
                 <FormControl>
-                  <div className="relative">
-                    <span className="absolute left-2 text-[10px] text-zinc-500/70 -top-[.5rem] bg-white px-2">
-                      Registro nacional
-                    </span>
-                    <Input placeholder="Registro nacional" value={field.value} onChange={field.onChange} />
-                  </div>
+                  <Input placeholder="Registro nacional" value={field.value} onChange={field.onChange} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -373,16 +398,12 @@ export default function FormCreateSale({ clients, dbProducts }: Props) {
           <FormField
             disabled={loading}
             control={form.control}
-            name="client.city"
+            name="city"
             render={({ field }) => (
               <FormItem className="flex flex-col flex-grow-[1]">
+                <FormLabel className='text-[12px]'>Cidade</FormLabel>
                 <FormControl>
-                  <div className="relative">
-                    <span className="absolute left-2 text-[10px] text-zinc-500/70 -top-[.5rem] bg-white px-2">
-                      Cidade
-                    </span>
-                    <Input placeholder="Cidade" value={field.value} onChange={field.onChange} />
-                  </div>
+                  <Input placeholder="Cidade" value={field.value} onChange={field.onChange} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -391,16 +412,12 @@ export default function FormCreateSale({ clients, dbProducts }: Props) {
           <FormField
             disabled={loading}
             control={form.control}
-            name="client.state"
+            name="state"
             render={({ field }) => (
               <FormItem className="flex flex-col flex-grow-[1]">
+                <FormLabel className='text-[12px]'>Estado</FormLabel>
                 <FormControl>
-                  <div className="relative">
-                    <span className="absolute left-2 text-[10px] text-zinc-500/70 -top-[.5rem] bg-white px-2">
-                      Estado
-                    </span>
-                    <Input placeholder="Estado" value={field.value} onChange={field.onChange} />
-                  </div>
+                  <Input placeholder="Estado" value={field.value} onChange={field.onChange} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -409,16 +426,12 @@ export default function FormCreateSale({ clients, dbProducts }: Props) {
           <FormField
             disabled={loading}
             control={form.control}
-            name="client.email"
+            name="email"
             render={({ field }) => (
               <FormItem className="flex flex-col flex-grow-[1]">
+                <FormLabel className='text-[12px]'>Email</FormLabel>
                 <FormControl>
-                  <div className="relative">
-                    <span className="absolute left-2 text-[10px] text-zinc-500/70 -top-[.5rem] bg-white px-2">
-                      Email
-                    </span>
-                    <Input placeholder="Email" value={field.value} onChange={field.onChange} />
-                  </div>
+                  <Input placeholder="Email" value={field.value} onChange={field.onChange} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -432,9 +445,10 @@ export default function FormCreateSale({ clients, dbProducts }: Props) {
           <FormField
             disabled={loading}
             control={form.control}
-            name="tablePrice"
+            name="table"
             render={() => (
               <FormItem className="flex flex-col flex-grow-[1]">
+                <FormLabel className='text-[12px]'>Informações</FormLabel>
                 <FormControl>
                   <Combobox
                     key={'combobox-table'}
@@ -444,7 +458,7 @@ export default function FormCreateSale({ clients, dbProducts }: Props) {
                       { table: 'table3', name: 'Tabela 03' },
                     ]}
                     fnAdd={(table: { table: string; name: string }) =>
-                      form.setValue('tablePrice', table)
+                      form.setValue('table', table.name)
                     }
                     propsKey="name"
                   />
@@ -459,6 +473,7 @@ export default function FormCreateSale({ clients, dbProducts }: Props) {
             name="conveyor"
             render={({ field }) => (
               <FormItem className="flex flex-col flex-grow-[1]">
+                <FormLabel className='text-[12px]'>Transporte</FormLabel>
                 <FormControl>
                   <Input placeholder="Transporte" value={field.value} onChange={field.onChange} />
                 </FormControl>
@@ -472,6 +487,7 @@ export default function FormCreateSale({ clients, dbProducts }: Props) {
             name="planSell"
             render={({ field }) => (
               <FormItem className="flex flex-col flex-grow-[1]">
+                <FormLabel className='text-[12px]'>Condição de pagamento</FormLabel>
                 <FormControl>
                   <Input placeholder="Condição de pagamento" value={field.value} onChange={field.onChange} />
                 </FormControl>
@@ -499,7 +515,37 @@ export default function FormCreateSale({ clients, dbProducts }: Props) {
         </div>
         <div className="flex flex-col gap-4">
           <div className="flex justify-between items-center flex-wrap">
-            <div className="flex gap-10 flex-wrap">
+            <div className="flex gap-10 flex-wrap items-center">
+              <Button
+                disabled={loading}
+                type="button"
+                onClick={() => handleSaveSketch()}
+                className="flex-grow-[1] flex gap-2 items-center"
+              >
+                {loading ? (
+                  <>
+                    <Spinner className="w-5 h-5" />
+                    Salvando...
+                  </>
+                ) : (
+                  'Salvar rascunho'
+                )}
+              </Button>
+              {!linkGenerate &&
+                <Button onClick={handleGenerte} className='text-sm text-center' variant={'outline'} type='button'>
+                  Gerar pdf
+                </Button>
+              }
+              {linkGenerate &&
+                <Link className='text-sm text-center'
+                  href={linkGenerate!}
+                  download
+                  target="_blank"
+                  rel="noreferrer">
+                  Download disponivel
+                </Link>
+              }
+
               <Button
                 disabled={loading}
                 type="submit"
@@ -511,36 +557,14 @@ export default function FormCreateSale({ clients, dbProducts }: Props) {
                     Solicitando...
                   </>
                 ) : (
-                  'Finalizar'
+                  'Solicitar'
                 )}
               </Button>
-              {/* {link == null && (
-                <Button
-                  variant={'ghost'}
-                  onClick={handleGenerateLink}
-                  type="button"
-                  disabled={loading}
-                  className="hover:underline"
-                >
-                  Gerar PDF
-                </Button>
-              )} */}
-              {link && (
-                <Link
-                  href={link}
-                  download
-                  target="_blank"
-                  rel="noreferrer"
-                  className="border border-input bg-background hover:bg-accent hover:text-accent-foreground"
-                >
-                  Baixar em PDF
-                </Link>
-              )}
             </div>
             <AddingProduct
               data={dbProducts}
-              fnAdd={handleAdd}
-              table={form.getValues('tablePrice.table')}
+              fnAdd={addingProduct}
+              table={form.getValues('table')}
             />
           </div>
         </div>

@@ -67,9 +67,9 @@ export function DataTable<TData>({ table }: DataTableProps<TData>) {
                       {header.isPlaceholder
                         ? null
                         : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext(),
-                          )}
+                          header.column.columnDef.header,
+                          header.getContext(),
+                        )}
                     </TableHead>
                   )
                 })}
@@ -96,7 +96,7 @@ export function DataTable<TData>({ table }: DataTableProps<TData>) {
             ) : (
               <TableRow>
                 <TableCell
-                  colSpan={table?.getAllColumns().length - 1}
+                  colSpan={table?.getAllColumns().length}
                   className="h-24 text-center"
                 >
                   Sem resultados.
@@ -111,7 +111,7 @@ export function DataTable<TData>({ table }: DataTableProps<TData>) {
           {table.getFilteredRowModel().rows.length} total de linha(s).
         </p>
         <div>
-          {table.getRowModel().rows?.length && (
+          {table.getRowModel().rows?.length > 0 && (
             <Pagination className="inline-flex">
               <PaginationContent className="space-x-2">
                 <PaginationItem>
