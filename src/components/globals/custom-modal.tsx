@@ -44,7 +44,7 @@ const CustomModal = ({ children, subheading, type = 'modal' }: Props) => {
   }
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="px-10 py-4 max-md:p-3 max-w-[80%]">
+      <DialogContent className="px-10 py-4 max-md:p-3 ">
         <DialogHeader>
           <DialogTitle className="hidden">Modal</DialogTitle>
           <DialogDescription>{subheading}</DialogDescription>

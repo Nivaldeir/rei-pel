@@ -2,9 +2,9 @@
 import { db } from '@/lib/db'
 import { NextAuthOptions } from 'next-auth'
 
+import { createHash } from 'crypto'
 import Credentials from 'next-auth/providers/credentials'
 import { User } from '../../types/next-auth'
-import { createHash } from 'crypto'
 
 export const authNextOptions: NextAuthOptions = {
   providers: [
@@ -21,9 +21,7 @@ export const authNextOptions: NextAuthOptions = {
         const hashPassowrd = createHash('sha256')
           .update(password)
           .digest('hex')
-        console.log(createHash('sha256')
-          .update("123")
-          .digest('hex'))
+          console.log(user)
         if (user.password !== hashPassowrd) throw new Error("Senha ou usuario incorreto")
         return {
           id: user.id,

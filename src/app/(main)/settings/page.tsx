@@ -33,13 +33,15 @@ export default async function Settings() {
       return error
     }
   }
-  return <section className="p-4">
-    <header className="ml-4">
-      <p>Bem vindo aos Configurações, <strong>Nivaldeir</strong></p>
+  return <>
+    <header className="px-6 py-3 space-y-6 border-b border-border w-full">
+      <p className="ml-3 uppercase">Configurações, <strong>Nivaldeir</strong></p>
     </header>
-    {
-      user &&
-      <FormSettings data={user} fnUpdate={fnUpdate} />
-    }
-  </section>
+    <div className="p-4">
+      {
+        user &&
+        <FormSettings data={user} fnUpdate={fnUpdate} />
+      }
+    </div>
+  </>
 }

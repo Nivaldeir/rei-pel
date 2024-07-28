@@ -45,6 +45,7 @@ model Product {
   table2          Float
   table3          Float
   ProductQuantity ProductQuantity[]
+  isActived       Boolean?          @default(true)
 }
 
 model ProductQuantity {

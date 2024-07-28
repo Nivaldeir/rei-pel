@@ -1,7 +1,7 @@
 "use client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { authNextOptions } from "@/config/auth-config";
-import { ChevronDown, ChevronLeft, CircleHelp, HomeIcon, LogOut, Settings, ShoppingCart, UserCheck, UsersRound } from "lucide-react";
+import { ChevronDown, ChevronLeft, CircleHelp, HomeIcon, LogOut, Package, Settings, ShoppingCart, UserCheck, UsersRound } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -25,7 +25,7 @@ function SiderBar() {
 
   return (
     <aside
-      className={`sticky top-0  h-screen ${sidebarOpen ? "w-[260px]" : "w-[80px] items-center"} transition-width flex max-w-[260px] flex-col justify-between border-r-[1px] bg-white px-4 py-6 duration-300 ease-in-out`}
+      className={`sticky top-0  max-md:hidden h-screen ${sidebarOpen ? "w-[260px]" : "w-[80px] items-center"} transition-width flex max-w-[260px] flex-col justify-between border-r-[1px] bg-white px-4 py-6 duration-300 ease-in-out`}
     >
       <div
         className="absolute -right-4 z-10 flex h-[28px] w-[28px] cursor-pointer items-center justify-center rounded-lg border-[1px] bg-white transition-transform"
@@ -85,32 +85,46 @@ function SiderBar() {
                 className={`w-5 h-5 text-center duration-700 ease-in-out ${sidebarOpen && 'mr-5 '
                   }`}
               />
-              {sidebarOpen && <span className="text-xs">Vendas</span>}
+              {sidebarOpen && <span className="text-xs">Pedidos</span>}
             </div>
           </Link>
           {
             session?.user?.isAdmin &&
-            <Link
-              href="/users"
-              className={`flex w-full cursor-pointer justify-between rounded-lg p-[10px] hover:bg-slate-200 ${isActive("/users") && "bg-slate-200/50"}`}
-            >
-              <div className="flex w-full items-center gap-3">
-                <UserCheck
-                  className={`w-5 h-5 text-center duration-700 ease-in-out ${sidebarOpen && 'mr-5 '
-                    }`}
-                />
-                {sidebarOpen && <span className="text-xs">Usuarios</span>}
-              </div>
-            </Link>
+            <>
+              <Link
+                href="/users"
+                className={`flex w-full cursor-pointer justify-between rounded-lg p-[10px] hover:bg-slate-200 ${isActive("/users") && "bg-slate-200/50"}`}
+              >
+                <div className="flex w-full items-center gap-3">
+                  <UserCheck
+                    className={`w-5 h-5 text-center duration-700 ease-in-out ${sidebarOpen && 'mr-5 '
+                      }`}
+                  />
+                  {sidebarOpen && <span className="text-xs">Usuarios</span>}
+                </div>
+              </Link>
+              <Link
+                href="/items"
+                className={`flex w-full cursor-pointer justify-between rounded-lg p-[10px] hover:bg-slate-200 ${isActive("/items") && "bg-slate-200/50"}`}
+              >
+                <div className="flex w-full items-center gap-3">
+                  <Package
+                    className={`w-5 h-5 text-center duration-700 ease-in-out ${sidebarOpen && 'mr-5 '
+                      }`}
+                  />
+                  {sidebarOpen && <span className="text-xs">Produtos</span>}
+                </div>
+              </Link>
+            </>
           }
         </ul>
       </nav>
       <div>
         <nav>
-          <ul className="flex flex-col gap-1">
+          <ul className="flex flex-col gap-1 justify-center">
             <Link
               href="/settings"
-              className={`flex w-full cursor-pointer justify-between rounded-lg p-[10px] hover:bg-slate-200 ${isActive("/settings") && "bg-slate-200/50"}`}
+              className={`flex w-full cursor-pointer justify-c rounded-lg p-[10px] hover:bg-slate-200 ${isActive("/settings") && "bg-slate-200/50"}`}
             >
               <div className="flex w-full items-center gap-3">
                 <Settings
@@ -123,7 +137,7 @@ function SiderBar() {
             <Link
               href={"#"}
               onClick={() => signOut()}
-              className={`cflex w-full cursor-pointer justify-between rounded-lg p-[10px] hover:bg-red-100 ${sidebarOpen ? "opacity-1" : "opacity-0"} flex items-center gap-2`}
+              className={`flex w-full cursor-pointer justify-between rounded-lg p-[10px] hover:bg-red-100 ${sidebarOpen ? "opacity-1" : "opacity-0"} flex items-center gap-2`}
             >
               <div className="flex w-full items-center gap-3">
 

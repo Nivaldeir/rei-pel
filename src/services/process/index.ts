@@ -1,5 +1,6 @@
 'use server'
 
+import { ProductWithDetails } from '@/components/form/form-create-sale'
 import { authNextOptions } from '@/config/auth-config'
 import { CalculateDiscount } from '@/lib/utils'
 import { Client } from '@prisma/client'
@@ -9,17 +10,17 @@ import { db } from '../../lib/db'
 import { createOrderCallisto } from '../callistor'
 import { generatePdf } from '../pdf'
 import { sendProducts } from './product'
-import { ProductWithDetails } from '@/components/form/form-create-sale'
 
 type Props = {
   date: Date
-  client: Omit<Client, "userId">
+  client: Omit<Client, 'userId'>
   table: 'table1' | 'table2' | 'table3'
   planSell: string
   observation: string
   transportant: string
   isNewClient: boolean
   products: ProductWithDetails[]
+  id: string | null
 }
 export async function sendProcess({
   client,
@@ -30,6 +31,7 @@ export async function sendProcess({
   table,
   isNewClient,
   transportant,
+  id,
 }: Props) {
   const session = (await getServerSession(authNextOptions)) as any
   const orders = products.map((p) => ({
@@ -39,14 +41,14 @@ export async function sendProcess({
     bonificado: 'N',
     descontoPerc: p.discount,
   })) as [
-      {
-        codigoProduto: string
-        quantidade: number
-        valor: number
-        bonificado: string
-        descontoPerc: number
-      },
-    ]
+    {
+      codigoProduto: string
+      quantidade: number
+      valor: number
+      bonificado: string
+      descontoPerc: number
+    },
+  ]
   const { numeroPedido, codigoPedido, codigoPedidoEcommerce } =
     await createOrderCallisto({
       date,
@@ -58,13 +60,6 @@ export async function sendProcess({
       tabelaPreco: '1',
       orders,
     })
-  generatePdf({
-    client,
-    date,
-    observation,
-    planSell,
-    products,
-  })
   const idFile = await generatePdf({
     client,
     user: session!.user!,
@@ -75,7 +70,6 @@ export async function sendProcess({
     number: numeroPedido,
     transport: transportant,
   })
-  // const idFile = await sendFilePdf(nameFile)
   const { ids, quantity } = await sendProducts({
     products,
   })
@@ -150,6 +144,10 @@ export async function sendProcess({
           id: 'fd79f440-e54b-11ee-a9f2-5fe5357cab11',
           value: observation,
         },
+        {
+          "id": "3ef54230-60c1-11ef-ac4c-7d3713976fb8",
+          "value": numeroPedido
+        },
         ...ids,
       ],
       documents: [
@@ -170,31 +168,47 @@ export async function sendProcess({
     },
   })
 
-  // await db.productSale.create({
-  //   data: {
-  //     codePedido: "5545456",
-  //     codePedidoEcommerce: "5545456".toString(),
-  //     numeroPedido,
-  //     clientId: client.code,
-  //     product: {
-  //       createMany: {
-  //         data: products.map((p) => ({
-  //           id: p.id,
-  //           code: p.code,
-  //           description: p.description,
-  //           price: parseFloat(p[p.table]) * p.quantity,
-  //           quantity: p.quantity,
-  //           discount: p.discount,
-  //           productId: p.code
-  //         })),
-  //       },
-  //     },
-  //     userId: session.user.id,
-  //     obs: observation ?? '',
-  //     planSale: planSell,
-  //     transport: transportant,
-  //   },
-  // })
+  if (id) {
+    try {
+      await db.productSale.delete({
+        where: { id },
+      })
+    } catch (error) {}
+  }
+  console.log({
+    codePedido: codigoPedido.toString(),
+    codePedidoEcommerce: codigoPedidoEcommerce.toString(),
+    numeroPedido: numeroPedido.toString(),
+  })
+  try {
+    await db.productSale.create({
+      data: {
+        codePedido: codigoPedido.toString(),
+        codePedidoEcommerce: codigoPedidoEcommerce.toString(),
+        numeroPedido: numeroPedido.toString(),
+        clientId: client.code,
+        status: 'FINISH',
+        product: {
+          createMany: {
+            data: products.map((p) => ({
+              code: p.code,
+              description: p.description,
+              price: parseFloat(p[p.table]) * p.quantity,
+              quantity: parseInt(p.quantity.toString()),
+              discount: p.discount,
+              productId: p.id,
+            })),
+          },
+        },
+        userId: session.user.id,
+        obs: observation,
+        planSale: planSell,
+        transport: transportant,
+      },
+    })
+  } catch (error: any) {
+    console.log(error.message)
+  }
   return {
     numeroPedido: numeroPedido,
   }

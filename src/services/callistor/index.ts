@@ -26,6 +26,7 @@ export type Callisto = {
 export async function createOrderCallisto(props: Callisto) {
   // try {
   const { client } = props
+  console.log(props)
   const response = await axios.post(
     'http://26.154.206.188:8084/WSIntegracaoERP/pedido/salvar',
     [
@@ -56,7 +57,7 @@ export async function createOrderCallisto(props: Callisto) {
           vendedor: props.vendedor,
           transportadora: 'REIPEL S.A',
           valorFrete: '12.000',
-          MovimentacaoContabil: 'REVENDA',
+          MovimentacaoContabil: 'VENDA',
           tabelaPreco: props.tabelaPreco,
           dataPedido: formatDate(props.date),
           login: 'ADMIN',
@@ -86,16 +87,13 @@ export async function createOrderCallisto(props: Callisto) {
       },
     },
   )
+  console.log(response.data)
   const { object } = response.data[0]
   return object as {
     codigoPedidoEcommerce: number
     codigoPedido: number
     numeroPedido: string
   }
-  // } catch (error: any) {
-  //   console.log('CATCH', error)
-  //   throw new Error()
-  // }
 }
 
 function formatDate(date: Date) {

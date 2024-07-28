@@ -76,7 +76,7 @@
   }
 }
 
-::-webkit-scrollbar-track {
+/* ::-webkit-scrollbar-track {
   background-color: #F4F4F4;
 }
 ::-webkit-scrollbar {
@@ -85,7 +85,7 @@
 }
 ::-webkit-scrollbar-thumb {
   background: #dad7d7;
-}
+} */
 
 html, body {
   overflow: hidden;

@@ -41,11 +41,11 @@ export default async function SalesPage() {
   return (
     <>
       <header className="px-6 py-3 space-y-6 border-b border-border w-full">
-        <p className="ml-3 uppercase">Produtos vendidos</p>
+        <p className="ml-3 uppercase">Historico de pedidos</p>
       </header>
-      <section className="p-4">
+      <section className="p-4"> 
         <Table data={productsSales} />
-      </section>
+      </section> 
     </>
   )
 }

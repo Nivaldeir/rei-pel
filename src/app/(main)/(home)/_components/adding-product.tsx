@@ -14,7 +14,11 @@ import { useState } from 'react'
 import { toast } from '@/components/ui/use-toast'
 import { Input } from '@/components/ui/input'
 import { z } from 'zod'
-import { Combobox } from '@/components/globals/combo-box'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { CaretSortIcon } from '@radix-ui/react-icons'
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
+import { CheckIcon } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 const schema = z.object({
   quantity: z.preprocess((value) => Number(value), z.number().min(1)),
@@ -29,7 +33,9 @@ type Props = {
 }
 
 export const AddingProduct = ({ data, fnAdd, table }: Props) => {
-  const [productSelected, setProductSelected] = useState<Product>()
+  const [productsFilter, setProductsFilter] = useState<Product[]>(data)
+  const [productSelected, setProductSelected] = useState<Product | null>(null)
+  const [open, setOpen] = useState(false)
   const [details, setDetails] = useState<z.infer<typeof schema>>({
     discount: 0,
     quantity: 1,
@@ -105,12 +111,57 @@ export const AddingProduct = ({ data, fnAdd, table }: Props) => {
               />
             </div>
           </div>
-          <div className="max-w-[400px] w-full">
-            <Combobox
-              data={data}
-              fnAdd={(e: Product) => setProductSelected(e)}
-              propsKey="description"
-            />
+          <div className="w-full flex gap-2 justify-between">
+            <Popover open={open} onOpenChange={setOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={open}
+                  className="w-full justify-between max-w-full overflow-hidden"
+                >
+                  {productSelected ?
+                    data?.find((p) => p.code === productSelected.code)?.description :
+                    'Selecione...'}
+                  <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="p-0 ">
+                <Command>
+                  <div className='p-1'>
+                    <Input placeholder="Selecione..." className="h-9 " onChange={(params) => {
+                      setProductsFilter(data.filter(p => p.code.toString().includes(params.target.value) || p.description.toString().includes(params.target.value)))
+                    }} />
+                  </div>
+                  <CommandList>
+                    <CommandEmpty>Não encontrado.</CommandEmpty>
+                    <CommandGroup className=''>
+                      {productsFilter.map((product) => (
+                        <CommandItem
+                          className='w-full overflow-hidden'
+                          key={product.code}
+                          value={product.description}
+                          onSelect={() => {
+                            setProductSelected(product)
+                            setOpen(false)
+                          }}
+                        >
+                          {product.description}
+                          <CheckIcon
+                            className={cn(
+                              'h-4 w-4',
+                              productSelected?.description === product?.description
+                                ? 'opacity-100'
+                                : 'opacity-0',
+                            )}
+                          />
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
           <div className="flex gap-4">
             <Input
