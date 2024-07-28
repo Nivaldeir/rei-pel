@@ -16,7 +16,6 @@ import { ColumnDef } from '@tanstack/react-table'
 import { ArrowUpDown, Ellipsis } from 'lucide-react'
 import React, { useState } from 'react'
 import { toast } from '@/components/ui/use-toast'
-import { Combobox } from '@/components/globals/combo-box'
 
 type User = {
   id: string
@@ -60,11 +59,11 @@ const ClientUpdater = ({
     <>
       <CustomModal>
         <h1 className="text-center">Troque os clientes de representantes</h1>
-        <Combobox
+        {/* <Combobox
           data={data}
           fnAdd={setRepresentative}
           propsKey="representative"
-        />
+        /> */}
         <Button onClick={handleClientUpdate}>Mover os clientes</Button>
       </CustomModal>
     </>

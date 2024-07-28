@@ -4,12 +4,15 @@ import { authNextOptions } from '@/config/auth-config'
 import { db } from '@/lib/db'
 import { createSale } from '@/lib/schema/sale'
 import { getServerSession } from 'next-auth/next'
-import { } from 'next/navigation'
 import { z } from 'zod'
 export default async function Home() {
   const session = (await getServerSession(authNextOptions)) as any
   const [products, clients] = await Promise.all([
-    db.product.findMany(),
+    db.product.findMany({
+      where: {
+        isActived: true
+      }
+    }),
     db.client.findMany({
       where: {
         userId: session?.user.id,

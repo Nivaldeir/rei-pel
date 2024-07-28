@@ -110,14 +110,14 @@ export function DataTable<TData>({ table }: DataTableProps<TData>) {
         <p className="flex flex-1 text-sm text-muted-foreground">
           {table.getFilteredRowModel().rows.length} total de linha(s).
         </p>
-        <div>
+        <div className='flex flex-wrap'>
           {table.getRowModel().rows?.length > 0 && (
             <Pagination className="inline-flex">
               <PaginationContent className="space-x-2">
                 <PaginationItem>
                   <PaginationPrevious
                     href="#"
-                    className={`flex items-center justify-center border ${page == table.getPageCount() && 'sr-only'}`}
+                    className={`hidden md:flex items-center justify-center border ${page == table.getPageCount() && 'sr-only'}`}
                     onClick={pagePrev}
                   />
                 </PaginationItem>
@@ -164,7 +164,7 @@ export function DataTable<TData>({ table }: DataTableProps<TData>) {
                   </PaginationLink>
                 </PaginationItem>
                 <PaginationItem
-                  className={`${page == table.getPageCount() && 'sr-only'}`}
+                  className={`${page == table.getPageCount() && 'sr-only'} hidden md:flex`}
                   onClick={pageNext}
                 >
                   <PaginationNext

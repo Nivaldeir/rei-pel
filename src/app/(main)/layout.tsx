@@ -1,3 +1,4 @@
+import { BottomBar } from './_components/bottom'
 import SiderBar from './_components/sider-bar'
 
 type Props = {
@@ -5,11 +6,12 @@ type Props = {
 }
 export default function MainLayout({ children }: Props) {
   return (
-    <div className="flex h-screen w-screen overflow-x-hidden overflow-y-auto max-md:mb-80 max-md:overflow-auto">
-      {/* <MainSideBar />
-      <MainBottomSiderbar /> */}
+    <div className="flex max-md:flex-col h-screen w-screen overflow-x-hidden overflow-y-auto max-md:mb-80 max-md:overflow-auto">
       <SiderBar />
-      <main className="w-full">{children}</main>
+      <main className="w-full mb-[30px]">
+        {children}
+      </main>
+      <BottomBar />
     </div>
   )
 }

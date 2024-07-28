@@ -1,5 +1,4 @@
 import { cn } from '@/lib/utils'
-import { GenericPropsDefault } from '../../../global'
 
 export function Spinner({ className }: Omit<GenericPropsDefault, 'children'>) {
   return (

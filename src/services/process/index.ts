@@ -20,6 +20,7 @@ type Props = {
   transportant: string
   isNewClient: boolean
   products: ProductWithDetails[]
+  id: string | null
 }
 export async function sendProcess({
   client,
@@ -30,6 +31,7 @@ export async function sendProcess({
   table,
   isNewClient,
   transportant,
+  id
 }: Props) {
   const session = (await getServerSession(authNextOptions)) as any
   const orders = products.map((p) => ({
@@ -58,13 +60,6 @@ export async function sendProcess({
       tabelaPreco: '1',
       orders,
     })
-  generatePdf({
-    client,
-    date,
-    observation,
-    planSell,
-    products,
-  })
   const idFile = await generatePdf({
     client,
     user: session!.user!,
@@ -75,7 +70,6 @@ export async function sendProcess({
     number: numeroPedido,
     transport: transportant,
   })
-  // const idFile = await sendFilePdf(nameFile)
   const { ids, quantity } = await sendProducts({
     products,
   })
@@ -170,31 +164,43 @@ export async function sendProcess({
     },
   })
 
-  // await db.productSale.create({
-  //   data: {
-  //     codePedido: "5545456",
-  //     codePedidoEcommerce: "5545456".toString(),
-  //     numeroPedido,
-  //     clientId: client.code,
-  //     product: {
-  //       createMany: {
-  //         data: products.map((p) => ({
-  //           id: p.id,
-  //           code: p.code,
-  //           description: p.description,
-  //           price: parseFloat(p[p.table]) * p.quantity,
-  //           quantity: p.quantity,
-  //           discount: p.discount,
-  //           productId: p.code
-  //         })),
-  //       },
-  //     },
-  //     userId: session.user.id,
-  //     obs: observation ?? '',
-  //     planSale: planSell,
-  //     transport: transportant,
-  //   },
-  // })
+  if (id) {
+    try {
+      await db.productSale.delete({
+        where: { id }
+      })
+    } catch (error) {
+    }
+  }
+  try {
+    await db.productSale.create({
+      data: {
+        codePedido: codigoPedido.toString(),
+        codePedidoEcommerce: codigoPedidoEcommerce.toString(),
+        numeroPedido: "dsadw",
+        clientId: client.code,
+        status: "FINISH",
+        product: {
+          createMany: {
+            data: products.map((p) => ({
+              code: p.code,
+              description: p.description,
+              price: parseFloat(p[p.table]) * p.quantity,
+              quantity: p.quantity,
+              discount: p.discount,
+              productId: p.id
+            })),
+          },
+        },
+        userId: session.user.id,
+        obs: observation,
+        planSale: planSell,
+        transport: transportant,
+      },
+    })
+  } catch (error) {
+    console.log(error.message)
+  }
   return {
     numeroPedido: numeroPedido,
   }
