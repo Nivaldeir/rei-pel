@@ -159,7 +159,7 @@ export async function sendProcess({
       test: false,
     },
   }
-  const res = await axios({
+  await axios({
     method: 'post',
     url: 'https://app-api.holmesdoc.io/v1/workflows/65f09b520e9ee4008b350546/start',
     data: bodyRequest,

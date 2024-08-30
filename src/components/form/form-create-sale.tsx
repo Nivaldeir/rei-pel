@@ -259,7 +259,6 @@ export default function FormCreateSale({ clients, dbProducts, fnSave, fnGetById 
       setLoading(false)
     }
   }
-  console.log(loading || disable)
   return (
     <Form {...form}>
       <form

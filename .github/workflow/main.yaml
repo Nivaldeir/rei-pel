@@ -1,0 +1,25 @@
+name: CI-CD
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+jobs:
+  CI:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Obtendo o codigo
+        uses: actions/checkout@v4.1.7
+      - name: Autenticacao no Docker hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build da imagem Docker
+        uses: docker/build-push-action@v6
+        with:
+          context: ./
+          file: ./Dockerfile 
+          push: true
+          tags: |
+            nivaldeir/rei-pel:v${{ github.run_number }} 
+            nivaldeir/rei-pel:latest

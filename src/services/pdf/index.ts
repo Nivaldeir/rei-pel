@@ -1,25 +1,25 @@
-'use server'
-import { randomUUID } from 'crypto'
-import { ProductWithDetails } from '@/components/form/form-create-sale'
-import { htmlOrder } from '@/lib/html'
-import { CalculateDiscount } from '@/lib/utils'
-import fetch from 'node-fetch';
-import FormData from 'form-data';
-import { Client } from '@prisma/client'
-import puppeteer from 'puppeteer'
-import { Readable } from 'stream';
-import { uploadPDFFromLocal } from '@/lib/firebase'
+"use server";
+import { randomUUID } from "crypto";
+import { ProductWithDetails } from "@/components/form/form-create-sale";
+import { htmlOrder } from "@/lib/html";
+import { CalculateDiscount } from "@/lib/utils";
+import fetch from "node-fetch";
+import FormData from "form-data";
+import { Client } from "@prisma/client";
+import puppeteer from "puppeteer";
+import { Readable } from "stream";
+import { uploadPDFFromLocal } from "@/lib/firebase";
 type Props = {
-  products: ProductWithDetails[]
-  client?: Omit<Client, 'userId'>
-  user?: any
-  number?: string
-  date?: Date
-  observation?: string
-  planSell?: string
-  transport?: string
-  view?: boolean
-}
+  products: ProductWithDetails[];
+  client?: Omit<Client, "userId">;
+  user?: any;
+  number?: string;
+  date?: Date;
+  observation?: string;
+  planSell?: string;
+  transport?: string;
+  view?: boolean;
+};
 
 export async function generatePdf(props: Props) {
   const {
@@ -31,42 +31,100 @@ export async function generatePdf(props: Props) {
     planSell,
     transport,
     view = false,
-  } = props
+  } = props;
   const browser = await puppeteer.launch({
     headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    args: ["--no-sandbox", "--disable-setuid-sandbox"],
     timeout: 120000,
-  })
-  const page = await browser.newPage()
-  let tableHtml = ' '
+  });
+  const page = await browser.newPage();
+  let tableHtml = " ";
   products.forEach((p: any) => {
     tableHtml += `
   <tr>
-      <td>${p.code ?? ' '}</td>
-      <td>${p.description ?? ' '}</td>
-      <td>${p.apres ?? ' '}</td>
-      <td>${p[p.table].toLocaleString('pt-BR', {
-      minimumFractionDigits: 2,
-      style: 'currency',
-      currency: 'BRL',
-    }) ?? ' '
+      <td>${p.code ?? " "}</td>
+      <td>${p.description ?? " "}</td>
+      <td>${p.apres ?? " "}</td>
+      <td>${
+        p[p.table].toLocaleString("pt-BR", {
+          minimumFractionDigits: 2,
+          style: "currency",
+          currency: "BRL",
+        }) ?? " "
       }</td>
-      <td>${p.discount ?? ' '}%</td>
-      <td>${p.quantity ?? ' '}</td>
-      <td>${CalculateDiscount({
-        discount: p.discount,
-        price: p[p.table],
-        quantity: p.quantity,
-      }).toLocaleString('pt-BR', {
-        minimumFractionDigits: 2,
-        style: 'currency',
-        currency: 'BRL',
-      }) ?? ' '
+      <td>${p.discount ?? " "}%</td>
+      <td>${p.quantity ?? " "}</td>
+      <td>${
+        CalculateDiscount({
+          discount: p.discount,
+          price: p[p.table],
+          quantity: p.quantity,
+        }).toLocaleString("pt-BR", {
+          minimumFractionDigits: 2,
+          style: "currency",
+          currency: "BRL",
+        }) ?? " "
       }</td>
-  `
-    tableHtml += `</tr>`
-  })
-
+  `;
+    tableHtml += `</tr>`;
+  });
+  let htmlHeaderContent = view ? "" : `    <section style="gap: 2rem; align-items: center;" class="flex">
+      <aside style="position: relative;flex-directin:column." class="border flex">
+        <h3 style="position: absolute; top: -32px; background-color: white; padding: 0 10px 0 10px;">Informações</h3>
+        <div class="flex" style="gap: 1rem;width:100%; flex-wrap:wrap">
+          <div class="flex">
+            <p>Numero: </p>
+            <p>${number}</p>
+          </div>
+          <div class="flex">
+          <p>Data: </p>
+          <p>${date?.toLocaleDateString("pt-BR", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+            timeZone: "America/Sao_Paulo",
+          })}</p>
+        </div>
+        <div class="flex">
+          <p>Transportadora:</p>
+          <p>${transport}</p >
+        </div>
+        <div class="flex">
+          <p>Plano de venda: </p>
+          <p>${planSell}</p>
+        </div>
+        <div class="flex">
+          <p>Oberservação: </p>
+          <p>${observation}</p>
+        </div>
+        </div>
+      </aside>
+      <aside style="position: relative;" class="border">
+        <h3 style="position: absolute; top: -32px; background-color: white; padding: 0 10px 0 10px;">Solicitante</h3>
+        <div class="flex" style="gap: 2rem;">
+        <div class="flex">
+        <p>CNPJ ou CPF:</p>
+        <p>${client?.identification || " "}</p>
+      </div>
+      <div class="flex">
+        <p>Codigo:</p>
+        <p>${client?.code || " "}</p>
+      </div>
+      <div class="flex">
+        <p>Raza Social:</p>
+        <p>${client?.name || " "}</p>
+      </div>
+      <div class="flex">
+        <p>Cidade:</p>
+        <p>${client?.city || " "}</p>
+      </div>
+      <div class="flex">
+        <p>Telefone:</p>
+        <p>${client?.tell || " "}</p>
+      </div>
+        </div>
+      </aside>
+    </section>`
   const htmlContent = `
   <!DOCTYPE html>
 <html lang="en">
@@ -131,58 +189,7 @@ export async function generatePdf(props: Props) {
     <h1>Solicitação de compras</h1>
   </header>
   <main>
-    <section style="gap: 2rem; align-items: center;" class="flex">
-      <aside style="position: relative;flex-directin:column." class="border flex">
-        <h3 style="position: absolute; top: -32px; background-color: white; padding: 0 10px 0 10px;">Informações</h3>
-        <div class="flex" style="gap: 1rem;width:100%; flex-wrap:wrap">
-          <div class="flex">
-            <p>Numero: </p>
-            <p>${number}</p>
-          </div>
-          <div class="flex">
-          <p>Data: </p>
-          <p>${date?.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'America/Sao_Paulo' })}</p>
-        </div>
-        <div class="flex">
-          <p>Transportadora:</p>
-          <p>${transport}</p >
-        </div>
-        <div class="flex">
-          <p>Plano de venda: </p>
-          <p>${planSell}</p>
-        </div>
-        <div class="flex">
-          <p>Oberservação: </p>
-          <p>${observation}</p>
-        </div>
-        </div>
-      </aside>
-      <aside style="position: relative;" class="border">
-        <h3 style="position: absolute; top: -32px; background-color: white; padding: 0 10px 0 10px;">Solicitante</h3>
-        <div class="flex" style="gap: 2rem;">
-        <div class="flex">
-        <p>CNPJ ou CPF:</p>
-        <p>${client?.identification}</p>
-      </div>
-      <div class="flex">
-        <p>Codigo:</p>
-        <p>${client?.code}</p>
-      </div>
-      <div class="flex">
-        <p>Raza Social:</p>
-        <p>${client?.name}</p>
-      </div>
-      <div class="flex">
-        <p>Cidade:</p>
-        <p>${client?.city}</p>
-      </div>
-      <div class="flex">
-        <p>Telefone:</p>
-        <p>${client?.tell}</p>
-      </div>
-        </div>
-      </aside>
-    </section>
+    ${htmlHeaderContent}
     <section>
       <aside style="position: relative; margin-top: 2rem;" class="">
         <h3 style="position: absolute; top: -32px; background-color: white; padding: 0 10px 0 10px;">Produtos</h3>
@@ -202,43 +209,45 @@ export async function generatePdf(props: Props) {
             </tr>
           </tbody>
         </table>
+        <p>Total: ${products.reduce(
+          (acc, p) => acc + p[p.table] * p.quantity,
+          0
+        ).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</p>
       </aside>
     </section>
   </main>
 </body>
-</html>`
+</html>`;
   await page.setContent(htmlContent, {
-    waitUntil: 'networkidle0',
-  })
-  const pdfPath = process.cwd() + `/files/${client!.code}.pdf`
-  page.setDefaultTimeout(120000)
-  await page.pdf({ path: pdfPath, format: 'A4', waitForFonts: true })
-  await browser.close()
-  const downloadURL = await uploadPDFFromLocal(pdfPath)
-  if (view)
-    return downloadURL
-  return sendAndGenerate(downloadURL)
+    waitUntil: "networkidle0",
+  });
+  const pdfPath = process.cwd() + `/files/${client!.code}.pdf`;
+  page.setDefaultTimeout(120000);
+  await page.pdf({ path: pdfPath, format: "A4", waitForFonts: true });
+  await browser.close();
+  const downloadURL = await uploadPDFFromLocal(pdfPath);
+  if (view) return downloadURL;
+  return sendAndGenerate(downloadURL);
 }
 
 export async function sendAndGenerate(urlPath: string) {
-
   const fileContent = await downloadPDF(urlPath);
   const documentId = await sendFilePdf(fileContent);
-  return documentId
+  return documentId;
 }
 
 async function sendFilePdf(fileContent: ArrayBuffer): Promise<string> {
   try {
     const buffer = Buffer.from(fileContent);
     const formData = new FormData();
-    formData.append('file', Readable.from(buffer), 'arquivo.pdf');
+    formData.append("file", Readable.from(buffer), "arquivo.pdf");
 
     const headers = formData.getHeaders();
-    headers['api_token'] = process.env.api_token!;
+    headers["api_token"] = process.env.api_token!;
 
-    const response = await fetch('https://app-api.holmesdoc.io/v1/documents', {
+    const response = await fetch("https://app-api.holmesdoc.io/v1/documents", {
       signal: AbortSignal.timeout(5000),
-      method: 'POST',
+      method: "POST",
       headers,
       body: formData,
     });
@@ -247,7 +256,7 @@ async function sendFilePdf(fileContent: ArrayBuffer): Promise<string> {
       throw new Error(`Failed to send PDF: ${response.statusText}`);
     }
 
-    const responseData = await response.json();
+    const responseData = await response.json() as any;
     const { id } = responseData;
     return id;
   } catch (error: any) {

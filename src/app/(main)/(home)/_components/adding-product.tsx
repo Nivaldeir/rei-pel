@@ -52,6 +52,7 @@ export const AddingProduct = ({ data, fnAdd, table }: Props) => {
           description: 'Produto adicionado',
           variant: 'default',
         })
+        setProductSelected(null)
         setDetails((prev) => {
           return { ...prev, discount: 0, quantity: 1 }
         })
@@ -75,10 +76,9 @@ export const AddingProduct = ({ data, fnAdd, table }: Props) => {
           Adicionar produtos
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="lg:w-[500px] max-sm:w-full overflow-hidden">
         <DialogHeader>
           <DialogTitle className="text-center">Adicionando produto</DialogTitle>
-          <DialogDescription></DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-4">
           <div className="flex gap-4">
@@ -118,7 +118,7 @@ export const AddingProduct = ({ data, fnAdd, table }: Props) => {
                   variant="outline"
                   role="combobox"
                   aria-expanded={open}
-                  className="w-full justify-between max-w-full overflow-hidden"
+                  className="w-full justify-between "
                 >
                   {productSelected ?
                     data?.find((p) => p.code === productSelected.code)?.description :
@@ -127,7 +127,7 @@ export const AddingProduct = ({ data, fnAdd, table }: Props) => {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="p-0 ">
-                <Command>
+                <Command className='w-full h-full '>
                   <div className='p-1'>
                     <Input placeholder="Selecione..." className="h-9 " onChange={(params) => {
                       setProductsFilter(data.filter(p => p.code.toString().includes(params.target.value) || p.description.toString().includes(params.target.value)))
@@ -135,10 +135,10 @@ export const AddingProduct = ({ data, fnAdd, table }: Props) => {
                   </div>
                   <CommandList>
                     <CommandEmpty>Não encontrado.</CommandEmpty>
-                    <CommandGroup className=''>
+                    <CommandGroup>
                       {productsFilter.map((product) => (
                         <CommandItem
-                          className='w-full overflow-hidden'
+                          className='w-full break-words'
                           key={product.code}
                           value={product.description}
                           onSelect={() => {
