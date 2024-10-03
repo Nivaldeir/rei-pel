@@ -1,18 +1,13 @@
 'use client'
+import { ProductWithDetails } from '@/components/form/form-create-sale'
 import { CalculateDiscount } from '@/lib/utils'
-import { Product } from '@prisma/client'
 import { ColumnDef } from '@tanstack/react-table'
 import { X } from 'lucide-react'
-export type Products = {
-  discount: number
-  quantity: number
-  table: string
-} & Product
 
 type props = {
-  onDelete: (product: Products) => void
+  onDelete: (product: ProductWithDetails) => void
 }
-export function column({ onDelete }: props): ColumnDef<Products>[] {
+export function column({ onDelete }: props): ColumnDef<ProductWithDetails>[] {
   return [
     {
       accessorKey: 'code',

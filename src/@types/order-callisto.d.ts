@@ -1,8 +1,3 @@
-// export interface Callisto {
-//   pedido: Order
-//   pedidoItems: OrderItem[]
-// }
-
 type Order = {
   codigoPedidoEcommerce: string
   gerarPedido: string

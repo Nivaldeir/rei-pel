@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import { cn } from '@/lib/utils'
 
 export function Spinner({ className }: Omit<GenericPropsDefault, 'children'>) {
@@ -12,18 +11,3 @@ export function Spinner({ className }: Omit<GenericPropsDefault, 'children'>) {
     />
   )
 }
-=======
-import { cn } from '@/lib/utils'
-
-export function Spinner({ className }: Omit<GenericPropsDefault, 'children'>) {
-  return (
-    <div
-      className={cn([
-        'inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-e-transparent align-[-0.125em] text-surface motion-reduce:animate-[spin_1.5s_linear_infinite] dark:text-white',
-        className,
-      ])}
-      role="status"
-    />
-  )
-}
->>>>>>> 081bbfcb3162f1389d7117f2c30339ff4dd7cb8a

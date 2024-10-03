@@ -1,46 +1,35 @@
 "use server";
-import { randomUUID } from "crypto";
 import { ProductWithDetails } from "@/components/form/form-create-sale";
-import { htmlOrder } from "@/lib/html";
 import { CalculateDiscount } from "@/lib/utils";
 import fetch from "node-fetch";
 import FormData from "form-data";
-import { Client } from "@prisma/client";
-import puppeteer from "puppeteer";
 import { Readable } from "stream";
 import { uploadPDFFromLocal } from "@/lib/firebase";
+import { z } from "zod";
+import { createSale } from "@/lib/schema/sale";
+import { Cluster } from "puppeteer-cluster";
 type Props = {
+  details: z.infer<typeof createSale>;
   products: ProductWithDetails[];
-  client?: Omit<Client, "userId">;
-  user?: any;
-  number?: string;
-  date?: Date;
-  observation?: string;
-  planSell?: string;
-  transport?: string;
   view?: boolean;
+  number?: number;
 };
 
-export async function generatePdf(props: Props) {
-  const {
-    client,
-    date,
-    products,
-    number,
-    observation,
-    planSell,
-    transport,
-    view = false,
-  } = props;
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    timeout: 120000,
-  });
-  const page = await browser.newPage();
-  let tableHtml = " ";
-  products.forEach((p: any) => {
-    tableHtml += `
+export async function generatePdf(props: Props): Promise<string> {
+  try {
+    const { details, products, view, number } = props;
+    const cluster = await Cluster.launch({
+      concurrency: Cluster.CONCURRENCY_CONTEXT,
+      maxConcurrency: 2,
+      puppeteerOptions: {
+        // executablePath: "/usr/bin/chromium-browser",
+        timeout: 120000,
+        args: ["--no-sandbox", "--disable-setuid-sandbox"],
+      },
+    });
+    let tableHtml = " ";
+    products.forEach((p: any) => {
+      tableHtml += `
   <tr>
       <td>${p.code ?? " "}</td>
       <td>${p.description ?? " "}</td>
@@ -66,19 +55,21 @@ export async function generatePdf(props: Props) {
         }) ?? " "
       }</td>
   `;
-    tableHtml += `</tr>`;
-  });
-  let htmlHeaderContent = view ? "" : `    <section style="gap: 2rem; align-items: center;" class="flex">
+      tableHtml += `</tr>`;
+    });
+    let htmlHeaderContent = view
+      ? ""
+      : `    <section style="gap: 2rem; align-items: center;" class="flex">
       <aside style="position: relative;flex-directin:column." class="border flex">
         <h3 style="position: absolute; top: -32px; background-color: white; padding: 0 10px 0 10px;">Informações</h3>
         <div class="flex" style="gap: 1rem;width:100%; flex-wrap:wrap">
           <div class="flex">
             <p>Numero: </p>
-            <p>${number}</p>
+            <p>${number ?? "000"}</p>
           </div>
           <div class="flex">
           <p>Data: </p>
-          <p>${date?.toLocaleDateString("pt-BR", {
+          <p>${new Date()?.toLocaleDateString("pt-BR", {
             day: "2-digit",
             month: "2-digit",
             year: "numeric",
@@ -87,15 +78,15 @@ export async function generatePdf(props: Props) {
         </div>
         <div class="flex">
           <p>Transportadora:</p>
-          <p>${transport}</p >
+          <p>${details.conveyor}</p >
         </div>
         <div class="flex">
           <p>Plano de venda: </p>
-          <p>${planSell}</p>
+          <p>${details.planSell}</p>
         </div>
         <div class="flex">
           <p>Oberservação: </p>
-          <p>${observation}</p>
+          <p>${details.observation}</p>
         </div>
         </div>
       </aside>
@@ -104,28 +95,28 @@ export async function generatePdf(props: Props) {
         <div class="flex" style="gap: 2rem;">
         <div class="flex">
         <p>CNPJ ou CPF:</p>
-        <p>${client?.identification || " "}</p>
+        <p>${details.identification || " "}</p>
       </div>
       <div class="flex">
         <p>Codigo:</p>
-        <p>${client?.code || " "}</p>
+        <p>${details.code || " "}</p>
       </div>
       <div class="flex">
         <p>Raza Social:</p>
-        <p>${client?.name || " "}</p>
+        <p>${details.name || " "}</p>
       </div>
       <div class="flex">
         <p>Cidade:</p>
-        <p>${client?.city || " "}</p>
+        <p>${details.city || " "}</p>
       </div>
       <div class="flex">
         <p>Telefone:</p>
-        <p>${client?.tell || " "}</p>
+        <p>${details.tell || " "}</p>
       </div>
         </div>
       </aside>
-    </section>`
-  const htmlContent = `
+    </section>`;
+    const htmlContent = `
   <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -209,26 +200,46 @@ export async function generatePdf(props: Props) {
             </tr>
           </tbody>
         </table>
-        <p>Total: ${products.reduce(
-          (acc, p) => acc + p[p.table] * p.quantity,
-          0
-        ).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</p>
+        <p>Total: ${products
+          .reduce((acc, p) => acc + p[p.table] * p.quantity, 0)
+          .toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</p>
       </aside>
     </section>
   </main>
 </body>
 </html>`;
-  await page.setContent(htmlContent, {
-    waitUntil: "networkidle0",
-  });
-  const pdfPath = process.cwd() + `/files/${client!.code}.pdf`;
-  page.setDefaultTimeout(120000);
-  await page.pdf({ path: pdfPath, format: "A4", waitForFonts: true });
-  await browser.close();
-  const downloadURL = await uploadPDFFromLocal(pdfPath);
-  if (view) return downloadURL;
-  return sendAndGenerate(downloadURL);
+
+    let downloadURL: string = "";
+    await cluster.queue(async ({ page }) => {
+      await page.setContent(htmlContent, {
+        waitUntil: "networkidle0",
+      });
+      const pdfPath = process.cwd() + `/files/${details!.code}.pdf`;
+      await page.pdf({ path: pdfPath, format: "A4", waitForFonts: true });
+      downloadURL = await uploadPDFFromLocal(pdfPath);
+    });
+
+    await cluster.idle();
+    await cluster.close();
+
+    return downloadURL;
+  } catch (error) {
+    console.error("Error generating PDF:", error);
+    throw new Error("Failed to generate PDF.");
+  }
 }
+
+// await page.setContent(htmlContent, {
+//   waitUntil: "networkidle0",
+// });
+// const pdfPath = process.cwd() + `/files/${details!.code}.pdf`;
+// page.setDefaultTimeout(120000);
+// await page.pdf({ path: pdfPath, format: "A4", waitForFonts: true });
+// const downloadURL = await uploadPDFFromLocal(pdfPath);
+// console.log(downloadURL);
+// await browser.close();
+// if (view) return downloadURL;
+// return sendAndGenerate(downloadURL);
 
 export async function sendAndGenerate(urlPath: string) {
   const fileContent = await downloadPDF(urlPath);
@@ -256,7 +267,7 @@ async function sendFilePdf(fileContent: ArrayBuffer): Promise<string> {
       throw new Error(`Failed to send PDF: ${response.statusText}`);
     }
 
-    const responseData = await response.json() as any;
+    const responseData = (await response.json()) as any;
     const { id } = responseData;
     return id;
   } catch (error: any) {

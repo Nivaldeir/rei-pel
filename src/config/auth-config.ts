@@ -4,7 +4,7 @@ import { NextAuthOptions } from 'next-auth'
 
 import { createHash } from 'crypto'
 import Credentials from 'next-auth/providers/credentials'
-import { User } from '../../types/next-auth'
+import { User } from '../@types/next-auth'
 
 export const authNextOptions: NextAuthOptions = {
   providers: [

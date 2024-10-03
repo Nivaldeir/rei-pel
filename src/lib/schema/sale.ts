@@ -1,7 +1,6 @@
 import { z } from 'zod'
 
 export const createSale = z.object({
-  date: z.date({ required_error: 'Date é obrigatorio' }).optional(),
   table: z.string(),
   code: z.string({ required_error: 'Code é obrigatorio' }),
   classification: z.string().optional(),

@@ -11,10 +11,10 @@ import {
   VisibilityState,
 } from '@tanstack/react-table'
 import { useState } from 'react'
-import { column, Products } from './column'
+import { column,  } from './column'
 type Props = {
   data: ProductWithDetails[]
-  onDelete: (product: Products) => void
+  onDelete: (product: ProductWithDetails) => void
 }
 export default function Table({ data, onDelete }: Props) {
   const [sorting, setSorting] = useState<SortingState>([])
