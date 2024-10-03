@@ -24,76 +24,83 @@ export type Callisto = {
   ];
 };
 export async function createOrderCallisto(props: Callisto) {
-  // try {
-  const { client } = props;
-  const body = [
-    {
-      pedido: {
-        codigoPedidoEcommerceExterno: Date.now(),
-        gerarPedido: "S",
-        plano: props.plano,
-        cliente: {
-          classificacao: client?.classification[0].toUpperCase() || "",
-          cpfCnpj: client.identification ?? "",
-          nome: client?.name ?? "",
-          razaoSocial: client.razaoSocial ?? "",
-          cep: "",
-          endereco: "",
-          enderecoNumero: "",
-          enderecoComplemento: "",
-          bairro: "",
-          email: "",
-          cidade: client?.city,
-          estado: client?.state,
-          telefone: client?.tell ?? "",
-          inscricaoEstadual: client.stateRegistration,
-          cidadeIBGE: ibgm[client.city!],
-          contribuinte: "S",
-          consumidor: "N",
+  try {
+    const { client } = props;
+    const body = [
+      {
+        pedido: {
+          codigoPedidoEcommerceExterno: Date.now(),
+          gerarPedido: "S",
+          plano: props.plano,
+          cliente: {
+            classificacao: client?.classification[0].toUpperCase() || "",
+            cpfCnpj: client.identification ?? "",
+            nome: client?.name ?? "",
+            razaoSocial: client.razaoSocial ?? "",
+            cep: "",
+            endereco: "",
+            enderecoNumero: "",
+            enderecoComplemento: "",
+            bairro: "",
+            email: "",
+            cidade: client?.city,
+            estado: client?.state,
+            telefone: client?.tell ?? "",
+            inscricaoEstadual: client.stateRegistration,
+            cidadeIBGE: ibgm[client.city!],
+            contribuinte: "S",
+            consumidor: "N",
+          },
+          vendedor: props.vendedor,
+          transportadora: "REIPEL S.A",
+          valorFrete: "12.000",
+          MovimentacaoContabil: "VENDA",
+          tabelaPreco: props.tabelaPreco,
+          dataPedido: formatDate(props.date),
+          login: "TATICA",
+          pago: "N",
+          cdCidade: "",
+          estado: "",
+          logradouroE: "",
+          bairroE: "",
+          cepE: "",
+          numeroE: "",
+          complementoE: "",
+          observacaoPedido: "",
+          tipoCobranca: "Sem Cobrança",
+          credDebito: "",
+          prefixoCartao: "",
+          sufixoCartao: "",
+          NumDocumentoCartao: "",
+          NumAutorizacaoCartao: "",
+          idBandeiraCartao: 0,
         },
-        vendedor: props.vendedor,
-        transportadora: "REIPEL S.A",
-        valorFrete: "12.000",
-        MovimentacaoContabil: "VENDA",
-        tabelaPreco: props.tabelaPreco,
-        dataPedido: formatDate(props.date),
-        login: "TATICA",
-        pago: "N",
-        cdCidade: "",
-        estado: "",
-        logradouroE: "",
-        bairroE: "",
-        cepE: "",
-        numeroE: "",
-        complementoE: "",
-        observacaoPedido: "",
-        tipoCobranca: "Sem Cobrança",
-        credDebito: "",
-        prefixoCartao: "",
-        sufixoCartao: "",
-        NumDocumentoCartao: "",
-        NumAutorizacaoCartao: "",
-        idBandeiraCartao: 0,
+        pedidoItems: props.orders,
       },
-      pedidoItems: props.orders,
-    },
-  ];
-  console.log(`http://${process.env.IP_CALLISTOR}:8084/WSIntegracaoERPTemp/pedido/salvar`)
-  const response = await axios.post(
-    `http://${process.env.IP_CALLISTOR}:8084/WSIntegracaoERPTemp/pedido/salvar`,
-    body,
-    {
-      headers: {
-        Authorization: `Basic ${token}`,
-      },
-    }
-  );
-  const { object } = response.data[0];
-  return object as {
-    codigoPedidoEcommerce: number;
-    codigoPedido: number;
-    numeroPedido: string;
-  };
+    ];
+    console.log(
+      `http://${process.env.IP_CALLISTOR}:8084/WSIntegracaoERPTemp/pedido/salvar`
+    );
+    const response = await axios.post(
+      `http://${process.env.IP_CALLISTOR}:8084/WSIntegracaoERPTemp/pedido/salvar`,
+      body,
+      {
+        timeout: 60000,
+        headers: {
+          Authorization: `Basic ${token}`,
+        },
+      }
+    );
+    console.log(response);
+    const { object } = response.data[0];
+    return object as {
+      codigoPedidoEcommerce: number;
+      codigoPedido: number;
+      numeroPedido: string;
+    };
+  } catch (err) {
+    console.log(err);
+  }
 }
 
 function formatDate(date: Date) {
