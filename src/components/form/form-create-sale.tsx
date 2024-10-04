@@ -147,13 +147,20 @@ export default function FormCreateSale({ clients, dbProducts, fnSave, fnGetById 
         return
       }
       setLoading(true)
-      const { numeroPedido } = await sendProcess({
+      const output = await sendProcess({
         id: id,
         details: form.getValues(),
         products: products,
       })
+      if(!output) {
+        toast({
+          title: 'Error',
+          description: 'Erro ao gerar o pedido',
+        })
+        return
+      }
       toast({
-        title: 'Pedido #' + numeroPedido,
+        title: 'Pedido #' + output.numeroPedido,
         duration: 10000,
         description: 'Pedido gerado com sucesso',
       })

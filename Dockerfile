@@ -25,6 +25,8 @@ COPY package.json package-lock.json ./
 # Instalação das dependências da aplicação
 RUN npm ci
 
+RUN apk add --no-cache curl
+
 # Copia o restante do código da aplicação
 COPY . .
 
@@ -70,9 +72,6 @@ ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
 # Expor a porta que a aplicação vai utilizar
 EXPOSE 3000
-
-# Usar o dumb-init como init para lidar com o sinal SIGINT e SIGTERM corretamente
-ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 
 # Comando de inicialização da aplicação
 CMD ["npm", "start"]

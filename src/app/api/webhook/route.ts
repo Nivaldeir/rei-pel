@@ -10,7 +10,7 @@ export async function POST(request: Request
 ) {
   try {
     const output = await request.json();
-    let codePed = 68681490;
+    let codePed = 68681506;
     let product = output["properties"].PRODUTOS.split(" - ")[0];
     const pool = await connectToDB();
     
@@ -20,6 +20,7 @@ export async function POST(request: Request
       JOIN PedItem pi ON pi.cdPed = p.cdPed
       WHERE p.nPed = '${codePed}'
     `);
+    console.log(result);
     const item = result.recordset.filter((e) => e["apelido"] == product)[0];
     
     await pool.request().query(`

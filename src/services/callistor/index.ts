@@ -91,15 +91,17 @@ export async function createOrderCallisto(props: Callisto) {
         },
       }
     );
-    console.log(response);
-    const { object } = response.data[0];
-    return object as {
-      codigoPedidoEcommerce: number;
-      codigoPedido: number;
-      numeroPedido: string;
-    };
+    console.log(response.data);
+    if (response.data[0].sucesso) {
+      const { object } = response.data[0];
+      return object as {
+        codigoPedidoEcommerce: number;
+        codigoPedido: number;
+        numeroPedido: string;
+      };
+    }
   } catch (err) {
-    console.log(err);
+    throw err;
   }
 }
 
