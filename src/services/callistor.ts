@@ -1,4 +1,3 @@
-"use client";
 import { ProductWithDetails } from "@/@types/products";
 import { createSale } from "@/lib/schema/sale";
 import axios from "axios";

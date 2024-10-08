@@ -32,6 +32,7 @@ export async function sendProcess({
     products: products,
     session
   })
+  console.log(order)
   const idFile = await generatePdf({ details, products });
   const { ids, quantity } = await sendProducts(products);
   const total = products.reduce((total, acc) => {
