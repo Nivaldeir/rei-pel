@@ -16,14 +16,30 @@ type Props = {
   details: z.infer<typeof createSale>;
   products: ProductWithDetails[];
   id: string | null;
-  codePedido: string;
-  codePedidoEcommerce: string;
-  numeroPedido: string;
+  // codePedido: string;
+  // codePedidoEcommerce: string;
+  // numeroPedido: string;
 };
 
-export async function sendProcess({ details, products, id, codePedido, codePedidoEcommerce, numeroPedido }: Props) {
+export async function sendProcess({ details, products, id }: Props) {
   const session = (await getServerSession(authNextOptions)) as any;
-  const idFile = await generatePdf({ details, products });
+  const response = await fetch("http://147.79.82.85:3001/callisto", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      details,
+      products,
+    }),
+  });
+  const result = await response.json();
+  const order = result.output[0].object;
+  console.log(`[${new Date().getTime()}] - ${order}`);
+  // codePedido: order.data[0].object.codigoPedido,
+  // codePedidoEcommerce: order.data[0].object.codigoPedidoEcommerce,
+  // numeroPedido: order.data[0].object.numeroPedido
+  const idFile = await generatePdf({ details, products, view: false });
   const { ids, quantity } = await sendProducts(products);
   const total = products.reduce((total, acc) => {
     return (
@@ -42,7 +58,7 @@ export async function sendProcess({ details, products, id, codePedido, codePedid
       property_values: [
         {
           id: "a0c093e0-e54a-11ee-a9f2-5fe5357cab11",
-          value: "numeroPedido",
+          value: order.numeroPedido,
         },
         {
           id: "ac7d7db0-e54a-11ee-a9f2-5fe5357cab11",
@@ -98,7 +114,7 @@ export async function sendProcess({ details, products, id, codePedido, codePedid
         },
         {
           id: "3ef54230-60c1-11ef-ac4c-7d3713976fb8",
-          value: "numeroPedido",
+          value: order.numeroPedido,
         },
         ...ids,
       ],
@@ -130,9 +146,9 @@ export async function sendProcess({ details, products, id, codePedido, codePedid
   try {
     await db.productSale.create({
       data: {
-        codePedido: "45",
-        codePedidoEcommerce: "454",
-        numeroPedido: "4545",
+        codePedido: order.codigoPedido.toString(),
+        codePedidoEcommerce: order.codigoPedidoEcommerce.toString(),
+        numeroPedido: order.numeroPedido,
         clientId: details.code,
         status: "FINISH",
         product: {
@@ -154,7 +170,7 @@ export async function sendProcess({ details, products, id, codePedido, codePedid
       },
     });
     return {
-      numeroPedido: "numeroPedido",
+      numeroPedido: order.numeroPedido,
     };
   } catch (error) {
     throw error;

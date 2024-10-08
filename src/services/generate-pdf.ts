@@ -8,6 +8,7 @@ import { createSale } from "@/lib/schema/sale";
 import { Cluster } from "puppeteer-cluster";
 import { ProductWithDetails } from "@/@types/products";
 import { OrderHtml } from "@/lib/html";
+import { generatePDF } from "@/lib/generate-pdf";
 type Props = {
   details: z.infer<typeof createSale>;
   products: ProductWithDetails[];
@@ -16,6 +17,13 @@ type Props = {
 };
 
 export async function generatePdf(props: Props): Promise<string> {
+  await generatePDF(props);
+  const downloadURL = await uploadPDFFromLocal(process.cwd() + `/files/${props.details!.code}.pdf`);
+  console.log(downloadURL);
+  if (props.view) return downloadURL;
+  const documentId = await sendAndGenerate(downloadURL);
+  console.log(documentId);
+  return documentId;
   try {
     const { details, products, view, number } = props;
     const cluster = await Cluster.launch({
@@ -37,7 +45,7 @@ export async function generatePdf(props: Props): Promise<string> {
       props.details,
       number?.toString()
     );
-    console.log(tableHtml)
+    console.log(tableHtml);
     let downloadURL: string = "";
     await cluster.queue(async ({ page }) => {
       await page.setContent(tableHtml, {

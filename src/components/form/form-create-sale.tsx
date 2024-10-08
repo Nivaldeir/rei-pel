@@ -60,7 +60,6 @@ export default function FormCreateSale({ clients, dbProducts, fnSave, fnGetById 
   const [disable, setDisable] = useState(false)
   const [linkGenerate, setLinkGenerate] = useState<string | null>(null)
   const id = useSearchParams().get("id")
-  const { data: session } = useSession()
   const form = useForm<z.infer<typeof createSale>>({
     resolver: zodResolver(createSale),
     defaultValues: {
@@ -124,28 +123,10 @@ export default function FormCreateSale({ clients, dbProducts, fnSave, fnGetById 
         return
       }
       setLoading(true)
-      const response = await fetch("/api/callistor", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          details: data,
-          products,
-        }),
-      });
-      const order = await response.json()
-      if(order.error) {
-        toast.error('Aconteceu um error contate o suporte')
-        return
-      }
       const output = await sendProcess({
         id: id,
         details: data,
         products: products,
-        codePedido: order.data[0].object.codigoPedido,
-        codePedidoEcommerce: order.data[0].object.codigoPedidoEcommerce,
-        numeroPedido: order.data[0].object.numeroPedido,
       })
       console.log("output", output)
       if(output.numeroPedido) {
