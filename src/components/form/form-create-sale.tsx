@@ -124,22 +124,19 @@ export default function FormCreateSale({ clients, dbProducts, fnSave, fnGetById 
         return
       }
       setLoading(true)
-      const order = await createOrderCallisto({
-        details: data,
-        products: products,
-        session
-      })
-      if(!order) {
-        toast.error('Aconteceu um error contate o suporte')
-        return
-      }
+      // const order = await createOrderCallisto({
+      //   details: data,
+      //   products: products,
+      //   session
+      // })
+      // if(!order) {
+      //   toast.error('Aconteceu um error contate o suporte')
+      //   return
+      // }
       const output = await sendProcess({
         id: id,
         details: data,
         products: products,
-        codePedido: order.codigoPedido.toString(),
-        codePedidoEcommerce: order?.codigoPedidoEcommerce.toString(),
-        numeroPedido: order?.numeroPedido,
       })
       console.log("output", output)
       if(output.numeroPedido) {

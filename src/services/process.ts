@@ -16,20 +16,22 @@ type Props = {
   details: z.infer<typeof createSale>;
   products: ProductWithDetails[];
   id: string | null;
-  codePedido: string;
-  codePedidoEcommerce: string;
-  numeroPedido: string;
+  // codePedido: string;
+  // codePedidoEcommerce: string;
+  // numeroPedido: string;
 };
 
 export async function sendProcess({
   details,
   products,
   id,
-  codePedido,
-  codePedidoEcommerce,
-  numeroPedido,
 }: Props) {
   const session = (await getServerSession(authNextOptions)) as any;
+  const order = await createOrderCallisto({
+    details: details,
+    products: products,
+    session
+  })
   const idFile = await generatePdf({ details, products });
   const { ids, quantity } = await sendProducts(products);
   const total = products.reduce((total, acc) => {
@@ -49,7 +51,7 @@ export async function sendProcess({
       property_values: [
         {
           id: "a0c093e0-e54a-11ee-a9f2-5fe5357cab11",
-          value: numeroPedido,
+          value: order.numeroPedido,
         },
         {
           id: "ac7d7db0-e54a-11ee-a9f2-5fe5357cab11",
@@ -105,7 +107,7 @@ export async function sendProcess({
         },
         {
           id: "3ef54230-60c1-11ef-ac4c-7d3713976fb8",
-          value: numeroPedido,
+          value: order.numeroPedido,
         },
         ...ids,
       ],
@@ -137,9 +139,9 @@ export async function sendProcess({
   try {
     await db.productSale.create({
       data: {
-        codePedido,
-        codePedidoEcommerce,
-        numeroPedido,
+        codePedido: order.codigoPedido.toString(),
+        codePedidoEcommerce: order.codigoPedidoEcommerce.toString(),
+        numeroPedido: order.numeroPedido,
         clientId: details.code,
         status: "FINISH",
         product: {
@@ -161,7 +163,7 @@ export async function sendProcess({
       },
     });
     return {
-      numeroPedido: numeroPedido,
+      numeroPedido: order.numeroPedido,
     };
   } catch (error) {
     throw error;
