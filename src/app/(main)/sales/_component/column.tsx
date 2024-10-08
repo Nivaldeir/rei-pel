@@ -32,7 +32,7 @@ export const columns: ColumnDef<
       cell: ({ row }) => {
         return (
           <p className="h-[25px] max-w-[250px] truncate text-center">
-            {row.original.codePedido}
+            {row.original.numeroPedido}
           </p>
         )
       },

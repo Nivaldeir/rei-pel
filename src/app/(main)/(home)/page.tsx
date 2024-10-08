@@ -1,5 +1,6 @@
 "use server"
-import FormCreateSale, { ProductWithDetails } from '@/components/form/form-create-sale'
+import { ProductWithDetails } from '@/@types/products'
+import FormCreateSale from '@/components/form/form-create-sale'
 import { authNextOptions } from '@/config/auth-config'
 import { db } from '@/lib/db'
 import { createSale } from '@/lib/schema/sale'

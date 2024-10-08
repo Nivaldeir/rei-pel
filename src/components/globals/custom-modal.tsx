@@ -1,24 +1,17 @@
-import { ReactNode, useEffect } from 'react'
-import { Button } from '../ui/button'
+import { ReactNode } from 'react'
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
 import { useModal } from '../providers/modal-provider'
 import {
   Sheet,
-  SheetClose,
   SheetContent,
-  SheetDescription,
-  SheetFooter,
   SheetHeader,
   SheetTitle,
-  SheetTrigger,
 } from '../ui/sheet'
 type Props = {
   subheading?: string

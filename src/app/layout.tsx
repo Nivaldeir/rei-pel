@@ -2,8 +2,8 @@
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { SessionProvider } from 'next-auth/react'
-import { Toaster } from '@/components/ui/toaster'
 import ModalProvider from '@/components/providers/modal-provider'
+import { Toaster } from 'sonner'
 const inter = Inter({ subsets: ['latin'] })
 
 export default function RootLayout({
@@ -20,7 +20,7 @@ export default function RootLayout({
         <SessionProvider>
           <ModalProvider>
           {children}
-          <Toaster />
+          <Toaster position='top-center' richColors />
         </ModalProvider>
       </SessionProvider>
     </body>

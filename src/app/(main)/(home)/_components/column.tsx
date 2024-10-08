@@ -1,5 +1,5 @@
 'use client'
-import { ProductWithDetails } from '@/components/form/form-create-sale'
+import { ProductWithDetails } from '@/@types/products'
 import { CalculateDiscount } from '@/lib/utils'
 import { ColumnDef } from '@tanstack/react-table'
 import { X } from 'lucide-react'
@@ -92,9 +92,6 @@ export function column({ onDelete }: props): ColumnDef<ProductWithDetails>[] {
       accessorKey: 'total',
       header: () => <div className="text-center">Total</div>,
       cell: ({ row }) => {
-        console.log({   discount: row.original.discount,
-          quantity: row.original.quantity,
-          price: row.original,})
         const totalWithDiscount = CalculateDiscount({
           discount: row.original.discount,
           quantity: row.original.quantity,

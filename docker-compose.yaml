@@ -6,13 +6,25 @@ services:
     ports:
       - 3000:3000
     shm_size: '1gb'
-    volumes:
-      - web_reipel_data:/data
     environment:
-      - DATABASE_URL="file:./dev.db"
-      - api_token="eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoiNjVmOWU0MGJlMmQ5NjYwMDY5ZTk0ZDFkIiwiaWF0IjoxNzEwODc1NjU5fQ.TLZ7YYSK_5EuJT9-8iPAUsCFTmnPCiLcJD0ujPYy0tU"
+      - DATABASE_URL=file:./dev.db
+      - api_token=eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoiNjVmOWU0MGJlMmQ5NjYwMDY5ZTk0ZDFkIiwiaWF0IjoxNzEwODc1NjU5fQ.TLZ7YYSK_5EuJT9-8iPAUsCFTmnPCiLcJD0ujPYy0tU
       - BCRYPT_ROUND=12
       - NEXTAUTH_SECRET=98E3B2CC28F61492C6934531C828C
-      - IP_CALLISTOR=25.57.82.40
-volumes:
-  web_reipel_data:
+      - NEXT_PUBLIC_CALLISTOR_HOST=25.57.82.40:8084/WSIntegracaoERPTemp
+      - CALLISTOR_DATABASE_HOST=25.57.82.40
+      - NEXT_PUBLIC_USERNAME_CALLISTOR_AUTH=ti
+      - NEXT_PUBLIC_PASSWORD_CALLISTOR_AUTH=ti2468**
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints: [ node.role == manager ]
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=traefik_public"
+        - "traefik.http.routers.web_reipel.rule=Host(`reipel.nivaldeirsoft.com.br`)"
+        - "traefik.http.routers.web_reipel.entrypoints=websecure"
+        - "traefik.http.routers.web_reipel.tls.certresolver=le"
+        - "traefik.http.routers.web_reipel.service=web_reipel"
+        - "traefik.http.services.web_reipel.loadbalancer.server.port=3000"

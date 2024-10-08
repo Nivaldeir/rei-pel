@@ -3,7 +3,7 @@ import sql from "mssql";
 const config = {
   user: 'tatica',                 // Substitua pelo seu usuário do SQL Server
   password: 'tatica2024@@',        // Substitua pela sua senha
-  server: process.env.IP_CALLISTOR!,        // IP do servidor SQL Server
+  server: process.env.CALLISTOR_DATABASE_HOST!,        // IP do servidor SQL Server
   port: 1433,                      // Porta correta (1433)
   database: 'TREINAMENTO',         // Nome do banco de dados (adicione o nome correto)
   options: {

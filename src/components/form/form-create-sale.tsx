@@ -6,7 +6,7 @@ import { z } from 'zod'
 import { AddingProduct } from '@/app/(main)/(home)/_components/adding-product'
 import Table from '@/app/(main)/(home)/_components/table'
 import { createSale } from '@/lib/schema/sale'
-import { generatePdf } from '@/services/pdf'
+import { generatePdf } from '@/services/generate-pdf'
 import { sendProcess } from '@/services/process'
 import { Client, Prisma, Product } from '@prisma/client'
 import Link from 'next/link'
@@ -14,7 +14,6 @@ import { useEffect, useState } from 'react'
 import { Spinner } from '../globals/spinner'
 import { Button } from '../ui/button'
 import { Checkbox } from '../ui/checkbox'
-import { DatePicker } from '../ui/data-picker'
 import {
   Form,
   FormControl,
@@ -25,7 +24,6 @@ import {
 } from '../ui/form'
 import { Input } from '../ui/input'
 import { Textarea } from '../ui/textarea'
-import { toast } from '../ui/use-toast'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover'
 import { CaretSortIcon } from '@radix-ui/react-icons'
@@ -33,6 +31,10 @@ import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '.
 import { CheckIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '../ui/select'
+import { createOrderCallisto } from '@/services/callistor'
+import { toast } from 'sonner'
+import { ProductWithDetails } from '@/@types/products'
+import { useSession } from 'next-auth/react'
 
 type Props = {
   clients: Client[]
@@ -50,20 +52,6 @@ type Props = {
   }>>
 }
 
-export interface ProductWithDetails {
-  id: string
-  code: string
-  description: string
-  apres: string
-  ipi: string
-  table1: number
-  table2: number
-  table3: number
-  discount: number
-  quantity: number
-  table: string
-}
-
 export default function FormCreateSale({ clients, dbProducts, fnSave, fnGetById }: Props) {
   const [clientsFilter, setClientsFilter] = useState(clients)
   const [open, setOpen] = useState(false)
@@ -72,8 +60,7 @@ export default function FormCreateSale({ clients, dbProducts, fnSave, fnGetById 
   const [disable, setDisable] = useState(false)
   const [linkGenerate, setLinkGenerate] = useState<string | null>(null)
   const id = useSearchParams().get("id")
-  const router = useRouter()
-
+  const { data: session } = useSession()
   const form = useForm<z.infer<typeof createSale>>({
     resolver: zodResolver(createSale),
     defaultValues: {
@@ -103,17 +90,12 @@ export default function FormCreateSale({ clients, dbProducts, fnSave, fnGetById 
   const handleSaveSketch = async () => {
     try {
       if (products.length === 0 && !form.getValues("email") && !form.getValues("tell")) {
-        toast({
-          title: 'Error',
-          description: 'Necessário adicionar no mínimo 1 produto',
-        })
+        toast.error("Necessário adicionar no mínimo 1 produto")
         return
       }
       setLoading(true)
       await fnSave({ ...form.getValues(), products }, id)
-      toast({
-        description: "Salvo com sucesso"
-      })
+      toast.success("Salvo com sucesso")
       setProducts([])
       form.setValue('code', '')
       form.setValue('classification', '')
@@ -129,9 +111,7 @@ export default function FormCreateSale({ clients, dbProducts, fnSave, fnGetById 
       form.setValue('observation', '')
     } catch (error) {
       console.log(error)
-      toast({
-        description: "Preencha todos os campos obrigatorios"
-      })
+      toast.error("Preencha todos os campos obrigatorios")
     } finally {
       setLoading(false)
     }
@@ -140,50 +120,48 @@ export default function FormCreateSale({ clients, dbProducts, fnSave, fnGetById 
   const handleSubmit = async (data: z.infer<typeof createSale>) => {
     try {
       if (products.length === 0) {
-        toast({
-          title: 'Error',
-          description: 'Necessário adicionar no mínimo 1 produto',
-        })
+        toast.error('Necessário adicionar no menos 1 produto')
         return
       }
       setLoading(true)
-      const output = await sendProcess({
-        id: id,
-        details: form.getValues(),
+      const order = await createOrderCallisto({
+        details: data,
         products: products,
+        session
       })
-      if(!output) {
-        toast({
-          title: 'Error',
-          description: 'Erro ao gerar o pedido',
-        })
+      if(!order) {
+        toast.error('Aconteceu um error contate o suporte')
         return
       }
-      toast({
-        title: 'Pedido #' + output.numeroPedido,
-        duration: 10000,
-        description: 'Pedido gerado com sucesso',
+      const output = await sendProcess({
+        id: id,
+        details: data,
+        products: products,
+        codePedido: order.codigoPedido.toString(),
+        codePedidoEcommerce: order?.codigoPedidoEcommerce.toString(),
+        numeroPedido: order?.numeroPedido,
       })
-      router.push("/")
-      setProducts([])
-      form.setValue('code', '')
-      form.setValue('classification', '')
-      form.setValue('identification', '')
-      form.setValue('name', '')
-      form.setValue('razaoSocial', '')
-      form.setValue('tell', '')
-      form.setValue('stateRegistration', '')
-      form.setValue('city', '')
-      form.setValue('state', '')
-      form.setValue('conveyor', '')
-      form.setValue('planSell', '')
-      form.setValue('observation', '')
+      console.log("output", output)
+      if(output.numeroPedido) {
+        toast.success("Numero: #" + output.numeroPedido, { duration: 8000 })
+        setProducts([])
+        form.setValue('code', '')
+        form.setValue('classification', '')
+        form.setValue('identification', '')
+        form.setValue('name', '')
+        form.setValue('razaoSocial', '')
+        form.setValue('tell', '')
+        form.setValue('stateRegistration', '')
+        form.setValue('city', '')
+        form.setValue('state', '')
+        form.setValue('conveyor', '')
+        form.setValue('planSell', '')
+        form.setValue('observation', '')
+        return
+      }
     } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive',
-      })
+      console.log(error)
+      toast.error(error.message)
     } finally {
       setLoading(false)
     }
@@ -198,9 +176,7 @@ export default function FormCreateSale({ clients, dbProducts, fnSave, fnGetById 
       console.log("url", url)
       setLinkGenerate(url)
     } catch (error) {
-      toast({
-        description: "Aconteceu algum error inesperado"
-      })
+      toast.error("Aconteceu algum error inesperado")
     } finally {
       setLoading(false)
     }

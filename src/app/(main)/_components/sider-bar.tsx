@@ -5,7 +5,7 @@ import { ChevronDown, ChevronLeft, CircleHelp, HomeIcon, LogOut, Package, Settin
 import { signOut, useSession } from "next-auth/react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { memo, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { User } from "../../../@types/next-auth";
 
 function SiderBar() {
@@ -22,6 +22,18 @@ function SiderBar() {
     return url === path;
   };
 
+  useEffect(() => {
+    const handleResize = () => {
+        if (window.innerWidth < 900) setSidebarOpen(false);
+        else setSidebarOpen(true);
+    };
+
+    window.addEventListener("resize", handleResize);
+
+    handleResize();
+
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   return (
     <aside

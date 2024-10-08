@@ -1,4 +1,3 @@
-import { ProductWithDetails } from '@/components/form/form-create-sale'
 import { DataTable } from '@/components/globals/data-table'
 import {
   ColumnFiltersState,
@@ -12,6 +11,7 @@ import {
 } from '@tanstack/react-table'
 import { useState } from 'react'
 import { column,  } from './column'
+import { ProductWithDetails } from '@/@types/products'
 type Props = {
   data: ProductWithDetails[]
   onDelete: (product: ProductWithDetails) => void
