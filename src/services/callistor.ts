@@ -84,8 +84,10 @@ export async function createOrderCallisto(props: Props): Promise<{
           password: process.env.NEXT_PUBLIC_PASSWORD_CALLISTOR_AUTH!,
           username: process.env.NEXT_PUBLIC_USERNAME_CALLISTOR_AUTH!,
         },
+        withCredentials: true,
       }
     );
+    console.log(response.data)
     const { object } = response.data[0];
     return object as {
       codigoPedidoEcommerce: number;

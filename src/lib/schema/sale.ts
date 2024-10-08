@@ -3,7 +3,7 @@ import { z } from 'zod'
 export const createSale = z.object({
   table: z.string(),
   code: z.string({ required_error: 'Code é obrigatorio' }),
-  classification: z.string().optional(),
+  classification: z.string(),
   identification: z.string().optional(),
   name: z.string().optional(),
   razaoSocial: z.string().optional(),

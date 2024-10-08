@@ -137,23 +137,32 @@ export default function FormCreateSale({ clients, dbProducts, fnSave, fnGetById 
         id: id,
         details: data,
         products: products,
+        // codePedido: order.codigoPedido.toString(),
+        // codePedidoEcommerce: order?.codigoPedidoEcommerce.toString(),
+        // numeroPedido: order?.numeroPedido,
       })
       console.log("output", output)
       if(output.numeroPedido) {
         toast.success("Numero: #" + output.numeroPedido, { duration: 8000 })
-        setProducts([])
-        form.setValue('code', '')
-        form.setValue('classification', '')
-        form.setValue('identification', '')
-        form.setValue('name', '')
-        form.setValue('razaoSocial', '')
-        form.setValue('tell', '')
-        form.setValue('stateRegistration', '')
-        form.setValue('city', '')
-        form.setValue('state', '')
-        form.setValue('conveyor', '')
-        form.setValue('planSell', '')
-        form.setValue('observation', '')
+        // toast({
+      //   title: 'Pedido #' + output.numeroPedido,
+      //   duration: 10000,
+      //   description: 'Pedido gerado com sucesso',
+      // })
+      // router.push("/")
+      // setProducts([])
+      // form.setValue('code', '')
+      // form.setValue('classification', '')
+      // form.setValue('identification', '')
+      // form.setValue('name', '')
+      // form.setValue('razaoSocial', '')
+      // form.setValue('tell', '')
+      // form.setValue('stateRegistration', '')
+      // form.setValue('city', '')
+      // form.setValue('state', '')
+      // form.setValue('conveyor', '')
+      // form.setValue('planSell', '')
+      // form.setValue('observation', '')
         return
       }
     } catch (error: any) {
