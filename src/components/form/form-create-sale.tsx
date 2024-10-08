@@ -124,45 +124,45 @@ export default function FormCreateSale({ clients, dbProducts, fnSave, fnGetById 
         return
       }
       setLoading(true)
-      // const order = await createOrderCallisto({
-      //   details: data,
-      //   products: products,
-      //   session
-      // })
-      // if(!order) {
-      //   toast.error('Aconteceu um error contate o suporte')
-      //   return
-      // }
+      const response = await fetch("/api/callistor", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          details: data,
+          products,
+        }),
+      });
+      const order = await response.json()
+      if(order.error) {
+        toast.error('Aconteceu um error contate o suporte')
+        return
+      }
       const output = await sendProcess({
         id: id,
         details: data,
         products: products,
-        // codePedido: order.codigoPedido.toString(),
-        // codePedidoEcommerce: order?.codigoPedidoEcommerce.toString(),
-        // numeroPedido: order?.numeroPedido,
+        codePedido: order.data[0].object.codigoPedido,
+        codePedidoEcommerce: order.data[0].object.codigoPedidoEcommerce,
+        numeroPedido: order.data[0].object.numeroPedido,
       })
       console.log("output", output)
       if(output.numeroPedido) {
         toast.success("Numero: #" + output.numeroPedido, { duration: 8000 })
-        // toast({
-      //   title: 'Pedido #' + output.numeroPedido,
-      //   duration: 10000,
-      //   description: 'Pedido gerado com sucesso',
-      // })
-      // router.push("/")
-      // setProducts([])
-      // form.setValue('code', '')
-      // form.setValue('classification', '')
-      // form.setValue('identification', '')
-      // form.setValue('name', '')
-      // form.setValue('razaoSocial', '')
-      // form.setValue('tell', '')
-      // form.setValue('stateRegistration', '')
-      // form.setValue('city', '')
-      // form.setValue('state', '')
-      // form.setValue('conveyor', '')
-      // form.setValue('planSell', '')
-      // form.setValue('observation', '')
+        setProducts([])
+        form.setValue('code', '')
+        form.setValue('classification', '')
+        form.setValue('identification', '')
+        form.setValue('name', '')
+        form.setValue('razaoSocial', '')
+        form.setValue('tell', '')
+        form.setValue('stateRegistration', '')
+        form.setValue('city', '')
+        form.setValue('state', '')
+        form.setValue('conveyor', '')
+        form.setValue('planSell', '')
+        form.setValue('observation', '')
         return
       }
     } catch (error: any) {

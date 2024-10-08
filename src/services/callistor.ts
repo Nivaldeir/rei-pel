@@ -80,11 +80,11 @@ export async function createOrderCallisto(props: Props): Promise<{
       body,
       {
         timeout: 100000,
+        proxy: false,
         auth: {
           password: process.env.NEXT_PUBLIC_PASSWORD_CALLISTOR_AUTH!,
           username: process.env.NEXT_PUBLIC_USERNAME_CALLISTOR_AUTH!,
-        },
-        withCredentials: true,
+        }
       }
     );
     console.log(response.data)

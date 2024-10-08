@@ -22,7 +22,7 @@ export async function generatePdf(props: Props): Promise<string> {
       concurrency: Cluster.CONCURRENCY_CONTEXT,
       maxConcurrency: 2,
       puppeteerOptions: {
-        executablePath: "/usr/bin/chromium",
+        // executablePath: "/usr/bin/chromium",
         args: [
           "--no-sandbox",
           "--disable-setuid-sandbox",
@@ -37,7 +37,7 @@ export async function generatePdf(props: Props): Promise<string> {
       props.details,
       number?.toString()
     );
-
+    console.log(tableHtml)
     let downloadURL: string = "";
     await cluster.queue(async ({ page }) => {
       await page.setContent(tableHtml, {

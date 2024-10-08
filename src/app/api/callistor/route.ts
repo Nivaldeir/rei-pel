@@ -2,6 +2,7 @@ import axios from "axios";
 import { NextResponse } from "next/server";
 
 export async function POST(req, res) {
+  console.log("ENTROU AQUI")
   // const { data } = req.body; // Supondo que você esteja enviando os dados no corpo da requisição
   const data = [
     {
@@ -64,7 +65,7 @@ export async function POST(req, res) {
     },
   ];
   console.log(`http://${process.env.CALLISTOR_HOST}/pedido/salvar`);
-  // try {
+  try {
     const response = await axios.post(
       `http://${process.env.CALLISTOR_HOST}/pedido/salvar`,
       data,
@@ -76,10 +77,9 @@ export async function POST(req, res) {
         },
       }
     );
-    console.log(response.data);
     // Retorne a resposta da API externa
-    return NextResponse.json({ error: false }, { status: 200 });
-  // } catch (error: any) {
-  //   return NextResponse.json({ error: error.message });
-  // }
+    return NextResponse.json({ error: false, data: response.data }, { status: 200 });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message });
+  }
 }
